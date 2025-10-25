@@ -6,12 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 
-# ---- Load environment ----
 module load python/3.10
-source ~/Fairness-in-Machine-Learning-Model/.venv/bin/activate
 
-# ---- Go to working directory ----
-cd ~/Fairness-in-Machine-Learning-Model/Simulation_Study/FCPH_FDCPH
+cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FCPH_FDCPH
 
-# ---- Run ----
 python run_individualFair_CPH.py
