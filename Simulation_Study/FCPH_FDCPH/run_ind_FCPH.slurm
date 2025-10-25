@@ -3,7 +3,7 @@
 #SBATCH --output=outputs/hpc_run_%j.out
 #SBATCH --error=outputs/hpc_run_%j.err
 #SBATCH --time=01:00:00
-#SBATCH --mem=16G
+#SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 
 # ---- Load environment ----
