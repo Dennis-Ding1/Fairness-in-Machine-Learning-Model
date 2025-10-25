@@ -1,8 +1,0 @@
-Loaded pretrained model from /home/dennis/Fairness-in-Machine-Learning-Model/Simulation Study/FCPH_FDCPH/trained-models/Individual_Fair_CoxPH.pth
-skSurv implemented C-index for test data:  0.4544
-weighted brier score:  0.0000
-Time-dependent Area under the ROC:  nan
-Log partial likelihood: -5.8988
-average individual fairness metric with scale= 0.0100:  0.0000
-group fairness metric (for age):  0.0010
-intersectional fairness metric:  0.0001
