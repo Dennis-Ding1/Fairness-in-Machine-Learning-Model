@@ -94,8 +94,8 @@ data_x, data_y, protect_attr = sim_data_preprocess("../data/data_I.csv")
 
 
 # train-test split
-data_X_train, data_X_test, data_y_train, data_y_test, S_train, S_test = train_test_split(data_x, data_y, protect_attr, test_size=0.2,stratify=data_y["death"], random_state=7)
-data_X_train, data_X_dev, data_y_train, data_y_dev, S_train, S_dev = train_test_split(data_X_train, data_y_train, S_train, test_size=0.2,stratify=data_y_train["death"], random_state=7)
+data_X_train, data_X_test, data_y_train, data_y_test, S_train, S_test = train_test_split(data_x, data_y, protect_attr, test_size=0.2,stratify=data_y["censor"], random_state=7)
+data_X_train, data_X_dev, data_y_train, data_y_dev, S_train, S_dev = train_test_split(data_X_train, data_y_train, S_train, test_size=0.2,stratify=data_y_train["censor"], random_state=7)
 
 data_X_train, data_event_train, data_time_train = check_arrays_survival(data_X_train, data_y_train)
 
@@ -114,14 +114,14 @@ data_X_test = scaler.transform(data_X_test)
 input_size = data_X_train.shape[1]
 output_size = 1
 learning_rate = 0.01  
-num_epochs = 25
+num_epochs = 3
 mini_batch = 128 
 
 target_fairness = torch.tensor(0.0)
 #lambda_list = torch.tensor([0.1, 1.0])
 
 scale = torch.tensor(0.01)
-lamda = torch.tensor(1.0) # chosen by grid search on dev set
+lamda = torch.tensor(0.1) # chosen by grid search on dev set
 
 data_X_test = Variable((torch.from_numpy(data_X_test)).float())
 
@@ -203,7 +203,11 @@ with torch.no_grad():
 skSurv_result_test = concordance_index_censored(data_event_test, data_time_test, model_prediction)
 print(f"skSurv implemented C-index for test data: {skSurv_result_test[0]: .4f}")
     
-eval_time = [int(np.percentile(data_time_train, 25)), int(np.percentile(data_time_train, 50)), int(np.percentile(data_time_train, 75))] 
+# eval_time = [int(np.percentile(data_time_train, 25)), int(np.percentile(data_time_train, 50)), int(np.percentile(data_time_train, 75))] 
+event_times_train = data_time_train[data_event_train == 1]
+eval_time = np.quantile(event_times_train, [0.25, 0.5, 0.75]).astype(float)
+eval_time = eval_time[eval_time < data_time_test.max()]
+
 tmp_br_score = np.zeros(len(eval_time)) 
     
 #%%
@@ -218,6 +222,8 @@ for t in range(len(eval_time)):
         cif_test[i] = 1 - probs[index]
         
     tmp_br_score[t] = weighted_brier_score(data_time_train, data_event_train, cif_test, data_time_test, data_event_test, eval_time[t])
+
+
 
 weighted_br_score = np.mean(tmp_br_score)
 print(f"weighted brier score: {weighted_br_score: .4f}")
@@ -234,7 +240,8 @@ survival_test=np.empty(len(data_event_test),dtype=survival_test)
 survival_test['event']=data_event_test
 survival_test['surv_time']=data_time_test
 
-event_times = np.arange(np.min(data_time_test), np.max(data_time_test)/2, 75)
+# event_times = np.arange(np.min(data_time_test), np.max(data_time_test)/2, 75)
+event_times = eval_time
 
 test_auc, test_mean_auc = cumulative_dynamic_auc(survival_train, survival_test, model_prediction, event_times)
 
@@ -263,7 +270,7 @@ print(f"average individual fairness metric with scale={scale_measure: .4f}: {R_b
 S_age = S_test[:,0] # age is in the 1st column
 
 group_fairness_age = group_fairness(model_prediction,S_age)
-print(f"group fairness metric (for age): {group_fairness_age: .4f}")
+print(f"group fairness metric (for sex): {group_fairness_age: .4f}")
 
 
 #%% intersectional fairness measures

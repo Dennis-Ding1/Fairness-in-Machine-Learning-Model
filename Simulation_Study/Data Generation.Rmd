@@ -15,7 +15,7 @@ generate_data <- function(
   sd_X = c(10, 15),        # sd for each covariate
   beta_X = c(0.03, 0.014), # coefficients for covariates
   beta_A = 0,                 # group effect
-  lambda = 0.05,               # baseline rate for Weibull
+  lambda = 0.004,               # baseline rate for Weibull
   k = 1.5,                    # shape parameter
   mu = 0.1,                   # baseline censoring rate
   alpha = 0,                  # censoring dependence
@@ -85,7 +85,7 @@ beta_X = c(0.03, 0.014)
 
 # Scenario I: all assumptions hold
 data_I <- generate_data(
-  n = 2000,
+  n = 5000,
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,

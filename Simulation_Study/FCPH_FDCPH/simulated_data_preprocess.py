@@ -21,12 +21,12 @@ def sim_data_preprocess(csv_path="../data/data_I.csv"):
     data_x = df[x_cols].copy()
 
     # ---- Survival outcomes
-    data_event = df["Delta"].astype(bool).values   # 事件指标
-    data_time = df["Y"].astype(float).values       # 观察时间
+    data_event =df["Delta"].astype(bool).values  # Opposite from data, 1 is censored here
+    data_time = df["Y"].astype(float).values
 
     # ---- Convert to sksurv-compatible structured array
-    data_y = np.empty(len(data_event), dtype=[("death", bool), ("futime", float)])
-    data_y["death"] = data_event
-    data_y["futime"] = data_time
+    data_y = np.empty(len(data_event), dtype=[("censor", bool), ("time", float)])
+    data_y["censor"] = data_event
+    data_y["time"] = data_time
 
     return data_x, data_y, protect_attr
