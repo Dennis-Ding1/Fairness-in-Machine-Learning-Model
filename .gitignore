@@ -53,3 +53,9 @@ rsconnect/
 FairSurv/
 
 __pycache__/
+
+trained-models/*
+!trained-models/.gitkeep
+
+outputs/*
+!outputs/.gitkeep
