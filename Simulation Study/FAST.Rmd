@@ -1,0 +1,215 @@
+---
+title: "FAST"
+output: html_document
+---
+
+```{r}
+# ==============================
+# Minimal generator for FAST
+# (binary group, Weibull T,
+#  independent censoring + group-specific follow-up)
+# ==============================
+
+generate_fast_data <- function(
+  n = 2000,          # 样本量
+  pA = 0.5,          # 组别A=1的比例
+  # 协变量分布（示例：年龄、收缩压）
+  age_mean = 60, age_sd = 10,
+  sbp_mean = 120, sbp_sd = 15,
+  # 生存时间模型（Weibull-PH）
+  weibull_shape = 1.2,    # k>1 风险随时间上升；k=1 指数分布
+  weibull_lambda = 0.05,  # 基线强度 λ（越大事件越早）
+  beta_age = 0.02, beta_sbp = 0.005, # 协变量对对数风险的影响
+  beta_A = 0.0,           # 组别的真实效应（默认0=无真实差异）
+  # 删失（独立）
+  censor_rate = 0.04,     # 指数删失率；越大删失越多
+  # 组别随访上限（制造删失不均）
+  cmax_g0 = 15,           # A=0 最长随访（年）
+  cmax_g1 = 10,           # A=1 最长随访（更短→删失更多）
+  seed = 123
+) {
+  set.seed(seed)
+
+  # 1) 敏感属性 A：两个人群
+  A <- rbinom(n, 1, pA)
+
+  # 2) 协变量 X：年龄、收缩压（正态分布）
+  age <- rnorm(n, age_mean, age_sd)
+  sbp <- rnorm(n, sbp_mean, sbp_sd)
+
+  # 3) 线性预测子（PH 框架）：eta = b_age*age + b_sbp*sbp + b_A*A
+  eta <- beta_age * age + beta_sbp * sbp + beta_A * A
+
+  # 4) 生成“真实事件时间” T（Weibull-PH 反函数法）
+  #    T = { -log(U) / (lambda * exp(eta)) }^(1/k)
+  U <- runif(n)
+  T_true <- ((-log(U)) / (weibull_lambda * exp(eta)))^(1 / weibull_shape)
+
+  # 5) 生成“删失时间” C（独立删失：指数分布）
+  C_raw <- rexp(n, rate = censor_rate)
+
+  # 6) 组别随访上限：A=1 上限更短 → 该组删失更多（制造删失差异）
+  Cmax <- ifelse(A == 1, cmax_g1, cmax_g0)
+
+  # 7) 观测到的时间与事件指示
+  Y     <- pmin(T_true, C_raw, Cmax)
+  Delta <- as.integer(T_true <= pmin(C_raw, Cmax))
+
+  # 8) 返回数据：给模型用的列（A, 协变量, Y, Delta），以及辅助列便于检查
+  data.frame(
+    A = A,
+    age = age,
+    sbp = sbp,
+    Y = Y,
+    Delta = Delta,
+    # 下面三列不是建模必需，但方便你自检
+    T_true = T_true,
+    C_raw = C_raw,
+    Cmax = Cmax
+  )
+}
+
+
+```
+
+
+
+```{r}
+# 假设 generate_fast_data() 已经在环境中定义
+dat <- generate_fast_data(
+  n = 2000,
+  beta_A = 0.0,   # 无真实组别效应
+  cmax_g0 = 15,
+  cmax_g1 = 10,
+  seed = 42
+)
+
+# ---- 基本结构检查 ----
+cat("Dataset size:", nrow(dat), "\n")
+cat("Columns:", names(dat), "\n")
+
+summary(dat)
+
+# ---- 1️⃣ 检查删失率 ----
+cat("\nOverall censoring rate:\n")
+mean(dat$Delta == 0)
+
+cat("\nCensoring rate by group (A=0, A=1):\n")
+tapply(dat$Delta == 0, dat$A, mean)
+
+# ---- 2️⃣ 检查生存时间分布 ----
+library(ggplot2)
+
+ggplot(dat, aes(x = Y, fill = factor(A))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Observed Time Distribution by Group",
+       x = "Observed Time (Y)",
+       fill = "Group A") +
+  theme_minimal()
+
+# ---- 3️⃣ 检查删失 vs. 事件 ----
+ggplot(dat, aes(x = Y, fill = factor(Delta))) +
+  geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
+  labs(title = "Events (Δ=1) vs Censored (Δ=0)",
+       x = "Observed Time",
+       fill = "Event Indicator") +
+  theme_minimal()
+
+# ---- 4️⃣ 检查协变量分布（可选）----
+ggplot(dat, aes(x = age, fill = factor(A))) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Age Distribution by Group", fill = "Group A") +
+  theme_minimal()
+
+ggplot(dat, aes(x = sbp, fill = factor(A))) +
+  geom_density(alpha = 0.4) +
+  labs(title = "SBP Distribution by Group", fill = "Group A") +
+  theme_minimal()
+
+# ---- 5️⃣ 快速验证删失机制是否如预期 ----
+aggregate(cbind(Y, Delta) ~ A, data = dat, FUN = mean)
+
+```
+
+```{r}
+id <- sample(seq_len(nrow(dat)))
+n <- nrow(dat)
+tr <- dat[id[1:floor(0.6*n)], ]
+va <- dat[id[(floor(0.6*n)+1):floor(0.8*n)], ]
+te <- dat[id[(floor(0.8*n)+1):n], ]
+
+write.csv(tr, "data/train.csv", row.names = FALSE)
+write.csv(va, "data/val.csv",   row.names = FALSE)
+write.csv(te, "data/test.csv",  row.names = FALSE)
+
+cat("Wrote CSVs to data/ : train.csv, val.csv, test.csv\n")
+```
+
+
+
+
+```{r}
+# 假设 dat 已经由 generate_fast_data() 生成
+# 载入生存分析相关包
+library(survival)
+library(survminer)
+
+# ---- 1️⃣ 构建生存对象 ----
+# Surv(time, event) 是 survival 包的核心数据结构
+surv_obj <- Surv(time = dat$Y, event = dat$Delta)
+
+# ---- 2️⃣ 按组别估计生存曲线 ----
+fit_group <- survfit(surv_obj ~ A, data = dat)
+
+# ---- 3️⃣ 可视化：Kaplan-Meier 曲线 ----
+ggsurvplot(
+  fit_group,
+  data = dat,
+  conf.int = TRUE,        # 置信区间
+  pval = TRUE,            # log-rank 检验的 p 值
+  risk.table = TRUE,      # 在下方显示风险表
+  legend.title = "Group A",
+  legend.labs = c("A=0 (longer follow-up)", "A=1 (shorter follow-up)"),
+  palette = c("#1f77b4", "#ff7f0e"),
+  title = "Kaplan–Meier Survival Curves by Group",
+  xlab = "Time",
+  ylab = "Survival Probability",
+  risk.table.height = 0.2,
+  ggtheme = theme_minimal()
+)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
