@@ -114,7 +114,7 @@ data_X_test = scaler.transform(data_X_test)
 input_size = data_X_train.shape[1]
 output_size = 1
 learning_rate = 0.01  
-num_epochs = 3
+num_epochs = 25
 mini_batch = 128 
 
 target_fairness = torch.tensor(0.0)
