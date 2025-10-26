@@ -4,23 +4,19 @@ output: html_document
 ---
 
 ```{r}
-# ---------------------------
-# Simulated Survival Dataset Generator (with heterogeneous Normal covariates)
-# ---------------------------
-
 generate_data <- function(
   n = 2000,
   pA = 0.5,
   mu_X = c(60, 120),          # mean for each covariate
-  sd_X = c(10, 15),        # sd for each covariate
-  beta_X = c(0.03, 0.014), # coefficients for covariates
+  sd_X = c(10, 15),           # sd for each covariate
+  beta_X = c(0.03, 0.014),    # coefficients for covariates
   beta_A = 0,                 # group effect
-  lambda = 0.004,               # baseline rate for Weibull
+  lambda = 0.004,             # baseline rate for Weibull
   k = 1.5,                    # shape parameter
   mu = 0.1,                   # baseline censoring rate
   alpha = 0,                  # censoring dependence
-  Cmax_A0 = 10,              # max follow-up (group 0)
-  Cmax_A1 = 10,              # max follow-up (group 1)
+  Cmax_A0 = 10,               # max follow-up (group 0)
+  Cmax_A1 = 10,               # max follow-up (group 1)
   seed = 123
 ) {
   set.seed(seed)
@@ -29,30 +25,28 @@ generate_data <- function(
   if (length(sd_X) != pX | length(beta_X) != pX)
     stop("Lengths of mu_X, sd_X, and beta_X doesn't match.")
   
-  # ---- Sensitive attribute ----
+  # Sensitive attribute
   A <- rbinom(n, 1, pA)
   
-  # ---- Covariates ----
+  # Covariates
   X <- matrix(NA, nrow = n, ncol = pX)
   for (j in 1:pX) {
     X[, j] <- rnorm(n, mean = mu_X[j], sd = sd_X[j])
   }
   colnames(X) <- paste0("X", 1:pX)
   
-  # ---- Linear predictor ----
+  # True event time 
   eta <- beta_A * A + X %*% beta_X
-  
-  # ---- True event time (Weibull proportional hazards) ----
   U <- runif(n)
   T_true <- ((-log(U)) / (lambda * exp(eta)))^(1 / k)
   
-  # ---- Censoring time (possibly informative) ----
+  #  Censoring time
   C <- rexp(n, rate = mu * exp(alpha * eta))
   
-  # ---- Group-specific max follow-up ----
+  # Max follow-up
   Cmax <- ifelse(A == 0, Cmax_A0, Cmax_A1)
   
-  # ---- Observed data ----
+  # Observed data
   Y <- pmin(T_true, C, Cmax)
   Delta <- as.numeric(T_true <= pmin(C, Cmax))
   
@@ -75,11 +69,9 @@ generate_data <- function(
 ```
 
 ```{r}
-# ---------------------------
-# Example usage
-# ---------------------------
+# Example
 
-mu_X = c(60, 120)
+mu_X = c(40, 120)  # Age and SBP
 sd_X = c(10, 15)
 beta_X = c(0.03, 0.014)
 
@@ -97,7 +89,7 @@ data_I <- generate_data(
 
 # Scenario II: violation of assumptions
 data_II <- generate_data(
-  n = 2000,
+  n = 5000,
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
@@ -107,7 +99,7 @@ data_II <- generate_data(
   Cmax_A1 = 10
 )
 
-# Quick check
+
 head(data_I)
 head(data_II)
 
@@ -115,24 +107,22 @@ head(data_II)
 ```
 
 ```{r}
-# 假设 generate_fast_data() 已经在环境中定义
+# Quick EDA
+library(ggplot2)
+
 dat <- data_I
 
-# ---- 基本结构检查 ----
 cat("Dataset size:", nrow(dat), "\n")
 cat("Columns:", names(dat), "\n")
 
 summary(dat)
 
-# ---- 1️⃣ 检查删失率 ----
 cat("\nOverall censoring rate:\n")
 mean(dat$Delta == 0)
 
 cat("\nCensoring rate by group (A=0, A=1):\n")
 tapply(dat$Delta == 0, dat$A, mean)
 
-# ---- 2️⃣ 检查生存时间分布 ----
-library(ggplot2)
 
 ggplot(dat, aes(x = Y, fill = factor(A))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
@@ -141,7 +131,6 @@ ggplot(dat, aes(x = Y, fill = factor(A))) +
        fill = "Group A") +
   theme_minimal()
 
-# ---- 3️⃣ 检查删失 vs. 事件 ----
 ggplot(dat, aes(x = Y, fill = factor(Delta))) +
   geom_histogram(alpha = 0.6, bins = 40, position = "identity") +
   labs(title = "Events (Δ=1) vs Censored (Δ=0)",
@@ -149,7 +138,6 @@ ggplot(dat, aes(x = Y, fill = factor(Delta))) +
        fill = "Event Indicator") +
   theme_minimal()
 
-# ---- 4️⃣ 检查协变量分布（可选）----
 ggplot(dat, aes(x = X1, fill = factor(A))) +
   geom_density(alpha = 0.4) +
   labs(title = "Age Distribution by Group", fill = "Group A") +
@@ -160,8 +148,6 @@ ggplot(dat, aes(x = X2, fill = factor(A))) +
   labs(title = "SBP Distribution by Group", fill = "Group A") +
   theme_minimal()
 
-# ---- 5️⃣ 快速验证删失机制是否如预期 ----
-aggregate(cbind(Y, Delta) ~ A, data = dat, FUN = mean)
 
 ```
 
