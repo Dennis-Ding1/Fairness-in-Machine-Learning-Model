@@ -1,11 +1,33 @@
 No pretrained model found — training from scratch.
-Epoch [1/3], Loss: 4.0270
-Epoch [2/3], Loss: 3.9553
-Epoch [3/3], Loss: 3.9340
-skSurv implemented C-index for test data:  0.6096
-weighted brier score:  0.2034
-Time-dependent Area under the ROC:  0.6390
-Log partial likelihood: -5.9049
-average individual fairness metric with scale= 0.0100:  0.1544
-group fairness metric (for sex):  0.0159
-intersectional fairness metric:  0.0286
+Epoch [1/25], Loss: 4.0270
+Epoch [2/25], Loss: 3.9553
+Epoch [3/25], Loss: 3.9340
+Epoch [4/25], Loss: 3.9284
+Epoch [5/25], Loss: 3.9270
+Epoch [6/25], Loss: 3.9270
+Epoch [7/25], Loss: 3.9271
+Epoch [8/25], Loss: 3.9272
+Epoch [9/25], Loss: 3.9272
+Epoch [10/25], Loss: 3.9272
+Epoch [11/25], Loss: 3.9273
+Epoch [12/25], Loss: 3.9273
+Epoch [13/25], Loss: 3.9273
+Epoch [14/25], Loss: 3.9273
+Epoch [15/25], Loss: 3.9274
+Epoch [16/25], Loss: 3.9274
+Epoch [17/25], Loss: 3.9274
+Epoch [18/25], Loss: 3.9274
+Epoch [19/25], Loss: 3.9274
+Epoch [20/25], Loss: 3.9274
+Epoch [21/25], Loss: 3.9274
+Epoch [22/25], Loss: 3.9275
+Epoch [23/25], Loss: 3.9275
+Epoch [24/25], Loss: 3.9275
+Epoch [25/25], Loss: 3.9275
+skSurv implemented C-index for test data:  0.6080
+weighted brier score:  0.2050
+Time-dependent Area under the ROC:  0.6358
+Log partial likelihood: -5.9031
+average individual fairness metric with scale= 0.0100:  0.1749
+group fairness metric (for sex):  0.0184
+intersectional fairness metric:  0.0329
