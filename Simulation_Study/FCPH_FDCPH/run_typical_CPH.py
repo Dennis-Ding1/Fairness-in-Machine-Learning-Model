@@ -47,7 +47,9 @@ from utilities import prepare_data
 from utilities import check_arrays_survival
 from flc_data_preprocess import flc_preprocess
 #Survival Data
-data_x, data_y, protect_attr = flc_preprocess()
+# data_x, data_y, protect_attr = flc_preprocess()
+from simulated_data_preprocess import sim_data_preprocess
+data_x, data_y, protect_attr = sim_data_preprocess("../data/data_I.csv")
 
 # train-test split
 data_X_train, data_X_test, data_y_train, data_y_test, S_train, S_test = train_test_split(data_x, data_y, protect_attr, test_size=0.2,stratify=data_y["death"], random_state=7)
@@ -97,12 +99,17 @@ for epoch in range(num_epochs):
     optimizer.zero_grad() # zero the parameter gradients
     loss.backward()
     optimizer.step()
-    #print ('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
+    print ('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
     
     
 #%% Evaluate the model
-import sys
-sys.stdout=open("typical_Cox_PH_output_Batch.txt","w")
+# import sys
+# sys.stdout=open("typical_Cox_PH_output_Batch.txt","w")
+import os, sys
+script_dir = os.path.dirname(os.path.abspath(__file__))
+output_dir = os.path.join(script_dir, "outputs")
+sys.stdout = open(os.path.join(output_dir, "typical_Cox_PH_output_Batch.txt"), "w")
+
 #Measuring the Performance of Survival Models
 # linear predictor for train data
 with torch.no_grad():

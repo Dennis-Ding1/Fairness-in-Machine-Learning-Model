@@ -1,6 +1,5 @@
 ---
 title: "Data Generation"
-output: html_document
 ---
 
 ```{r}
