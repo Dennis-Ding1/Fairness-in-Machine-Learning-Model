@@ -12,7 +12,6 @@ module load arrow/21.0.0
 module load python/3.11
 unset PYTHONPATH 
 
-source ../../.venv/bin/activate
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
