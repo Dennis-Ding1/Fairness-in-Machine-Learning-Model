@@ -17,7 +17,8 @@ source ../../.venv/bin/activate
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
 # Run FIDP model on SIMULATED dataset
-python Experiment.py \
+/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python Experiment.py \
+ Experiment.py \
   -i ../data/data_I.csv \
   -p . \
   -m "FIDP" \
