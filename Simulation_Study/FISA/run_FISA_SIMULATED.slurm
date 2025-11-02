@@ -6,9 +6,13 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 
+module purge
+module load gcc
+module load arrow/21.0.0
 module load python/3.11
+unset PYTHONPATH 
 
-# source ../../.venv/bin/activate
+source ../../.venv/bin/activate
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
