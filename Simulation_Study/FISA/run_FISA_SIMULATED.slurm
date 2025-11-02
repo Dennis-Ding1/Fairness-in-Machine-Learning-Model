@@ -8,9 +8,11 @@
 
 module load python/3.11
 
-cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
+cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model
 
-source ../../.venv/bin/activate
+source .venv/bin/activate
+
+cd /Simulation_Study/FISA
 
 # Run FIDP model on SIMULATED dataset
 python Experiment.py \
