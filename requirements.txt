@@ -6,3 +6,7 @@ scikit-survival
 matplotlib
 scipy
 tqdm
+sklearn
+rpy2
+pycox
+sksurv
