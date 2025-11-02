@@ -68,7 +68,10 @@ def loo_survival_function(partial_matrix, time, status):
     Surv_Eval_Time=np.array(partial_matrix.loc[:,'time'])
     loo_surv_prob=np.zeros((len(time),len(Surv_Eval_Time)))
     loo_matrix=np.zeros((len(time),len(Surv_Eval_Time),3))
-    for i in range(len(time)):
+    total = len(time)
+    for i in range(total):
+        if i % 500 == 0 and i > 0:
+            print(f"  Processing sample {i}/{total} ({i/total*100:.1f}%)...")
         loo_matrix[i,0,0]=-1
         idx=np.where(time[i]==Surv_Eval_Time)
         if status[i]==1:
@@ -91,10 +94,13 @@ def pseudo_values(data, evaltime):
     Returns:
         A dataframe of pseudo values for survival function for all subjects in the data at the prespecified time points. 
     """
+    print(f"  Computing survival function for {len(data)} samples...")
     time=np.array(data['time'])
     status=np.array(data['status'])
     surv=survival_function(time, status)
+    print(f"  Computing leave-one-out survival for {len(time)} samples (this may take a while)...")
     loo_surv=loo_survival_function(surv[0], time, status)
+    print(f"  Finalizing pseudo values...")
     pseudo_values= surv[0].iloc[0,1]*surv[1]-((surv[0].iloc[0,1]-1)*loo_surv)
 
     index=np.zeros((len(evaltime)))

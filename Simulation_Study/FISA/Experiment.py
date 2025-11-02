@@ -26,10 +26,22 @@ def set_random_seed(state=1):
         set_state(state)
 
 def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs):
-    torch.cuda.set_device(0)
+    # Configure logging to output to console
+    logging.basicConfig(level=logging.INFO, format='%(message)s', force=True)
+    
+    print(f"Starting experiment: {model_name} on {dataset_name}")
+    print(f"Data file: {fn_csv}")
+    print(f"Batch size: {batch_size}, Learning rate: {lr}, Epochs: {epochs}")
+    print("-" * 60)
+    
+    try:
+        torch.cuda.set_device(0)
+    except:
+        pass
     RANDOM_STATE = 1
     set_random_seed(RANDOM_STATE) # Set random seed
     
+    print("Loading and preprocessing data...")
     ## Load the preprocessed attributes
     eval_time, test_data, data_X_train, data_X_val, data_X_test, data_X_test_uncen, data_X_test_cen, train_pseudo, val_pseudo, test_pseudo, data_time_train, data_time_train_uncen, data_time_train_cen, data_time_val, data_time_test, data_time_test_uncen,data_time_test_cen, data_event_train, data_event_val, data_event_test, data_event_test_uncen, data_event_test_cen, protected_X_test, protected_event_test, protected_time_test, protected_X_test_uncen, protected_X_test_cen, protected_time_train_uncen, protected_time_train_cen, protected_time_test_uncen,protected_time_test_cen, protected_event_test_uncen, protected_event_test_cen=data_preprocess(fn_csv,dataset_name)
 
@@ -38,7 +50,9 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     elif dataset_name=='SEER':
         protected_group=["Race_ord_1","Race_ord_2","Race_ord_3","Race_ord_4"]        
     elif dataset_name=='FLChain':
-        protected_group=["sex_1","sex_0"]  
+        protected_group=["sex_1","sex_0"]
+    elif dataset_name=='SIMULATED':
+        protected_group=["A_0","A_1"]  
         
     ## Loading data using DataLoader
     train_loader = FastTensorDataLoader(torch.from_numpy(data_X_train), torch.from_numpy(train_pseudo), batch_size=batch_size, shuffle=True)

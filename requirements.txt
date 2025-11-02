@@ -6,7 +6,6 @@ scikit-survival
 matplotlib
 scipy
 tqdm
-sklearn
-rpy2
+scikit-learn
 pycox
-sksurv
+xlwt

@@ -75,7 +75,35 @@ def data_preprocess(data_csv_file, dataset_name):
         one_hot_encoder_list = ['sex', 'sample.yr','flc.grp']
         standardized_list = ['age', 'kappa', 'lambda', 'creatinine']
         protected_group1='age'
-        protected_group2=["sex_1","sex_0"]         
+        protected_group2=["sex_1","sex_0"]
+    elif dataset_name=='SIMULATED':
+        # Map simulated data columns to expected format
+        # Y -> time (observed survival time)
+        # Delta -> status (event indicator: 1=event, 0=censored)
+        data_df = data_df.rename(columns={'Y': 'time', 'Delta': 'status'})
+        # Drop columns that are not needed for modeling (id, T_true, C, Cmax)
+        columns_to_drop = ['id', 'T_true', 'C', 'Cmax']
+        for col in columns_to_drop:
+            if col in data_df.columns:
+                data_df = data_df.drop(columns=[col])
+        # A is the protected attribute (binary 0/1) - will be protected_group2
+        # X1 is age (protected_group1)
+        # X2, X3, ... are additional continuous covariates
+        one_hot_encoder_list = ['A']  ## A is categorical (binary) and will be one-hot encoded
+        
+        # Automatically detect all X covariates (X1, X2, X3, ...)
+        x_covariates = [col for col in data_df.columns if col.startswith('X')]
+        if len(x_covariates) == 0:
+            raise ValueError("No X covariates found in the data. Expected columns like X1, X2, etc.")
+        
+        # All X covariates will be standardized
+        standardized_list = sorted(x_covariates, key=lambda x: int(x[1:]) if x[1:].isdigit() else float('inf'))
+        protected_group1 = 'X1'  ## X1 is age, used for age-based grouping
+        protected_group2 = ["A_0", "A_1"]  ## Groups based on protected attribute A
+        
+        print(f"Detected {len(standardized_list)} X covariates: {standardized_list}")
+    else:
+        raise ValueError(f"Unknown dataset_name: {dataset_name}. Supported: SUPPORT, SEER, FLChain, SIMULATED")
         
     dataset = get_dummies(data_df, encode=one_hot_encoder_list)  ##Convert the categorical variables into dummy variables.
     data={}
@@ -118,34 +146,42 @@ def data_preprocess(data_csv_file, dataset_name):
     va_data= va_data.drop(va_data[va_data['time'] > np.max(tr_data['time'])].index) #Discard the individuals from validation set whoose observed times are greater than the observed times of tranining data 
     te_data= te_data.drop(te_data[te_data['time'] > np.max(tr_data['time'])].index) #Discard the individuals from test set whoose observed times are greater than the observed times of tranining data 
 
-
-    tr_protected_group1 = (tr_data[protected_group1]>65).astype(int) #Create a binary variable with two categories (more than 65 years and less or equal to 65 years)
-    tr_protected_group1[tr_protected_group1==0]=2
-    tr_data['protected_group1']=tr_protected_group1
+    # Handle protected_group1 (age-based grouping)
+    # Note: For SIMULATED dataset, X1 is age
+    if protected_group1 is not None:
+        tr_protected_group1 = (tr_data[protected_group1]>65).astype(int) #Create a binary variable with two categories (more than 65 years and less or equal to 65 years)
+        tr_protected_group1[tr_protected_group1==0]=2
+        tr_data['protected_group1']=tr_protected_group1
+        va_protected_group1 = (va_data[protected_group1]>65).astype(int)
+        va_protected_group1[va_protected_group1==0]=2
+        va_data['protected_group1']=va_protected_group1
+        te_protected_group1 = (te_data[protected_group1]>65).astype(int)
+        te_protected_group1[te_protected_group1==0]=2
+        te_data['protected_group1']=te_protected_group1
+    else:
+        # Fallback: if protected_group1 is None, set all values to 1 (single group)
+        # The evaluation function will automatically detect this and set F_group_protected_attribute_1 = 0.0
+        tr_data['protected_group1'] = 1
+        va_data['protected_group1'] = 1
+        te_data['protected_group1'] = 1
+    
+    # Handle protected_group2 (e.g., race or gender)
     tr_protected_group2=tr_data[protected_group2] # Another protected attribute (e.g., race or gender)
     tr_data['protected_group2']=tr_protected_group2.values.argmax(1)+1
-
-    va_protected_group1 = (va_data[protected_group1]>65).astype(int)
-    va_protected_group1[va_protected_group1==0]=2
-    va_data['protected_group1']=va_protected_group1
     va_protected_group2=va_data[protected_group2]
     va_data['protected_group2']=va_protected_group2.values.argmax(1)+1
-
-    te_protected_group1 = (te_data[protected_group1]>65).astype(int)
-    te_protected_group1[te_protected_group1==0]=2
-    te_data['protected_group1']=te_protected_group1
     te_protected_group2=te_data[protected_group2]
     te_data['protected_group2']=te_protected_group2.values.argmax(1)+1
 
     #Standardization of the continuous variables
-    features_idx = [standardized_list.index(feature) for feature in standardized_list] 
     train_data=tr_data.copy()
     val_data=va_data.copy()
     test_data=te_data.copy()
-    scaler=StandardScaler().fit(tr_data.iloc[:, features_idx])
-    train_data.iloc[:, features_idx]= scaler.transform(tr_data.iloc[:, features_idx])
-    val_data.iloc[:, features_idx]= scaler.transform(va_data.iloc[:, features_idx])
-    test_data.iloc[:, features_idx]= scaler.transform(te_data.iloc[:, features_idx])    
+    # Use column names instead of indices to avoid issues after one-hot encoding
+    scaler=StandardScaler().fit(tr_data[standardized_list])
+    train_data[standardized_list]= scaler.transform(tr_data[standardized_list])
+    val_data[standardized_list]= scaler.transform(va_data[standardized_list])
+    test_data[standardized_list]= scaler.transform(te_data[standardized_list])    
 
     
     ## Get the observed time and event status
@@ -164,10 +200,13 @@ def data_preprocess(data_csv_file, dataset_name):
     eval_time       = Evaltime(data_time_train) #Compute pre-specified time points
     
     ## Compute the pseudo values
-    
+    print("Computing pseudo values for training data...")
     tr_pseudo = pseudo_values(train_data, eval_time)
+    print("Computing pseudo values for validation data...")
     va_pseudo = pseudo_values(val_data, eval_time)
+    print("Computing pseudo values for test data...")
     te_pseudo = pseudo_values(test_data, eval_time)
+    print("Pseudo values computation completed!")
     train_pseudo = np.array(tr_pseudo, dtype='float32')
     val_pseudo   = np.array(va_pseudo, dtype='float32')
     test_pseudo  = np.array(te_pseudo, dtype='float32') 
