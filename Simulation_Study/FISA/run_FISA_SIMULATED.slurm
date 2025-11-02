@@ -33,25 +33,20 @@ module load gcc
 module load python/3.11
 unset PYTHONPATH
 
-cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
-VENV_PY=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python
+VENV=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv
+TARGET=$VENV/lib/python3.11/site-packages
 
-$VENV_PY - <<'PY'
-import sys, site, importlib.util
-print("PYTHON:", sys.executable)
-print("site-packages:", site.getsitepackages())
-for mod in ["pytz", "dateutil"]:
-    spec = importlib.util.find_spec(mod)
-    print(f"{mod}: found_in = {spec.origin if spec else None}")
+$VENV/bin/pip uninstall -y pytz python-dateuti
+
+$VENV/bin/pip install --no-cache-dir --no-build-isolation \
+  --target "$TARGET" --upgrade --force-reinstall --ignore-installed \
+  pytz==2025.1 python-dateutil==2.9.0.post0
+
+$VENV/bin/python - <<'PY'
+import pytz, dateutil, sys
+print("python:", sys.executable)
+print("pytz     ->", pytz.__file__)
+print("dateutil ->", dateutil.__file__)
+print("OK if both paths contain: /.venv/lib/python3.11/site-packages")
 PY
-
-$VENV_PY Experiment.py \
-  -i ../data/data_I.csv \
-  -p . \
-  -m "FIDP" \
-  -d "SIMULATED" \
-  -b 128 \
-  -lr 0.01 \
-  -e 5
-
 
