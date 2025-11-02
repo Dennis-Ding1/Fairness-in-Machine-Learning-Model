@@ -8,7 +8,7 @@
 
 module load python/3.11
 
-source ../../.venv/bin/activate
+# source ../../.venv/bin/activate
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
