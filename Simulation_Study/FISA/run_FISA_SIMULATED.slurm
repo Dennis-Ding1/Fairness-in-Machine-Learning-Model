@@ -5,13 +5,13 @@
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
+#SBATCH --gres=gpu:1
 
 module load python/3.10
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
-# Create outputs directory if it doesn't exist
-mkdir -p outputs
+source ../../.venv/bin/activate
 
 # Run FIDP model on SIMULATED dataset
 python Experiment.py \
