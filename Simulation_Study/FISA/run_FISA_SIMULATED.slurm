@@ -6,11 +6,9 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 
-module load python/3.11
+module load python/3.10
 
-cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model
-
-source .venv/bin/activate
+source ../../.venv/bin/activate
 
 cd /Simulation_Study/FISA
 
