@@ -11,6 +11,15 @@ module load python/3.10
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
+source ../../.venv/bin/activate
+
+# Debug: Verify environment
+echo "Python: $(which python)"
+echo "Python version: $(python --version)"
+echo "VIRTUAL_ENV: $VIRTUAL_ENV"
+python -c "import sys; print('Python executable:', sys.executable)"
+python -c "import typing_extensions; print('typing_extensions found at:', typing_extensions.__file__)" || echo "ERROR: typing_extensions not found in venv!"
+
 # Run FIPNAM model on SIMULATED dataset
 python Experiment.py \
   -i ../data/data_I.csv \
