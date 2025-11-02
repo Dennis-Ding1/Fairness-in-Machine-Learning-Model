@@ -6,18 +6,47 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 
+# module purge
+# module load gcc
+# module load arrow/21.0.0
+# module load python/3.11
+# unset PYTHONPATH 
+
+
+# cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
+
+# # Run FIDP model on SIMULATED dataset
+# /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python Experiment.py \
+#  Experiment.py \
+#   -i ../data/data_I.csv \
+#   -p . \
+#   -m "FIDP" \
+#   -d "SIMULATED" \
+#   -b 128 \
+#   -lr 0.01 \
+#   -e 5
+
+set -euo pipefail
+
 module purge
 module load gcc
-module load arrow/21.0.0
 module load python/3.11
-unset PYTHONPATH 
-
+unset PYTHONPATH
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
-# Run FIDP model on SIMULATED dataset
-/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python Experiment.py \
- Experiment.py \
+VENV_PY=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python
+
+$VENV_PY - <<'PY'
+import sys, pandas, pytz, dateutil
+print("PYTHON:", sys.executable)
+print("pandas:", pandas.__version__, "|", pandas.__file__)
+print("pytz  :", pytz.__version__,   "|", pytz.__file__)
+print("dateutil:", dateutil.__version__, "|", dateutil.__file__)
+print("OK if all three files are under: /.venv/lib/python3.11/site-packages")
+PY
+
+$VENV_PY Experiment.py \
   -i ../data/data_I.csv \
   -p . \
   -m "FIDP" \
