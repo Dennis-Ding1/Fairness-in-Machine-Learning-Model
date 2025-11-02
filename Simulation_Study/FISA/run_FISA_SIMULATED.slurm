@@ -12,8 +12,6 @@ cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
 source ../../.venv/bin/activate
 
-pip install -r requirements.txt
-
 cd /Simulation_Study/FISA
 
 # Run FIDP model on SIMULATED dataset
