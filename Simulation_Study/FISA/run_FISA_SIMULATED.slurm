@@ -34,16 +34,15 @@ module load python/3.11
 unset PYTHONPATH
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
-
 VENV_PY=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python
 
 $VENV_PY - <<'PY'
-import sys, pandas, pytz, dateutil
+import sys, site, importlib.util
 print("PYTHON:", sys.executable)
-print("pandas:", pandas.__version__, "|", pandas.__file__)
-print("pytz  :", pytz.__version__,   "|", pytz.__file__)
-print("dateutil:", dateutil.__version__, "|", dateutil.__file__)
-print("OK if all three files are under: /.venv/lib/python3.11/site-packages")
+print("site-packages:", site.getsitepackages())
+for mod in ["pytz", "dateutil"]:
+    spec = importlib.util.find_spec(mod)
+    print(f"{mod}: found_in = {spec.origin if spec else None}")
 PY
 
 $VENV_PY Experiment.py \
