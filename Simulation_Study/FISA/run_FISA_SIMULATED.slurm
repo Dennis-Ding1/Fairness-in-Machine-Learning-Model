@@ -5,7 +5,6 @@
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:1
 
 module load python/3.10
 

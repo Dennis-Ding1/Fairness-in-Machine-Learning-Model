@@ -11,9 +11,6 @@ module load python/3.10
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
-# Create outputs directory if it doesn't exist
-mkdir -p outputs
-
 # Run FIPNAM model on SIMULATED dataset
 python Experiment.py \
   -i ../data/data_I.csv \
