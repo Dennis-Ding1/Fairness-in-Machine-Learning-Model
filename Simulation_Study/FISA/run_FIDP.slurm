@@ -21,5 +21,5 @@ python Experiment.py \
   -m "FIDP" \
   -d "SIMULATED" \
   -b 128 \
-  -lr 0.5 \
-  -e 1
+  -lr 0.05 \
+  -e 10
