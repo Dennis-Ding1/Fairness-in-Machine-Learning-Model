@@ -34,10 +34,10 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     print(f"Batch size: {batch_size}, Learning rate: {lr}, Epochs: {epochs}")
     print("-" * 60)
     
-    try:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
         torch.cuda.set_device(0)
-    except:
-        pass
+        
     RANDOM_STATE = 1
     set_random_seed(RANDOM_STATE) # Set random seed
     
