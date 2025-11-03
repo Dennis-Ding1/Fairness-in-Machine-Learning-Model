@@ -265,7 +265,9 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
 # ==============================================================================   
 
 import torch
-torch.cuda.set_device(0)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    torch.cuda.set_device(0)
 
 def main(args):
 
