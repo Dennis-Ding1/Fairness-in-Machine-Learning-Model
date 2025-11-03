@@ -132,7 +132,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
         
         ## Evaluation
-        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name)))
+        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=torch.device('cpu')))
         model.eval()       
 
         scale_fairness = 0.01 ## Scale parameter
@@ -190,7 +190,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
         
          ## Evaluation
-        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name)))
+        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=torch.device('cpu')))
         model.eval()       
 
         scale_fairness = 0.01 ## Scale parameter
