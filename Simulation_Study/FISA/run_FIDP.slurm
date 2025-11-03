@@ -22,4 +22,4 @@ python Experiment.py \
   -d "SIMULATED" \
   -b 128 \
   -lr 0.05 \
-  -e 10
+  -e 3
