@@ -87,21 +87,21 @@ def data_preprocess(data_csv_file, dataset_name):
             if col in data_df.columns:
                 data_df = data_df.drop(columns=[col])
         # A is the protected attribute (binary 0/1) - will be protected_group2
-        # X1 is age (protected_group1)
-        # X2, X3, ... are additional continuous covariates
+        # age, LOS, eGFR, Hemoglobin, CCI are the 5 continuous covariates
         one_hot_encoder_list = ['A']  ## A is categorical (binary) and will be one-hot encoded
         
-        # Automatically detect all X covariates (X1, X2, X3, ...)
-        x_covariates = [col for col in data_df.columns if col.startswith('X')]
-        if len(x_covariates) == 0:
-            raise ValueError("No X covariates found in the data. Expected columns like X1, X2, etc.")
+        # The 5 X covariates: age, LOS, eGFR, Hemoglobin, CCI
+        standardized_list = ['age', 'LOS', 'eGFR', 'Hemoglobin', 'CCI']
         
-        # All X covariates will be standardized
-        standardized_list = sorted(x_covariates, key=lambda x: int(x[1:]) if x[1:].isdigit() else float('inf'))
-        protected_group1 = 'X1'  ## X1 is age, used for age-based grouping
+        # Verify all required columns exist
+        missing_cols = [col for col in standardized_list if col not in data_df.columns]
+        if missing_cols:
+            raise ValueError(f"Missing required columns in data: {missing_cols}. Expected: {standardized_list}")
+        
+        protected_group1 = 'age'  ## age is used for age-based grouping
         protected_group2 = ["A_0", "A_1"]  ## Groups based on protected attribute A
         
-        print(f"Detected {len(standardized_list)} X covariates: {standardized_list}")
+        print(f"Using {len(standardized_list)} X covariates: {standardized_list}")
     else:
         raise ValueError(f"Unknown dataset_name: {dataset_name}. Supported: SUPPORT, SEER, FLChain, SIMULATED")
         
@@ -147,7 +147,7 @@ def data_preprocess(data_csv_file, dataset_name):
     te_data= te_data.drop(te_data[te_data['time'] > np.max(tr_data['time'])].index) #Discard the individuals from test set whoose observed times are greater than the observed times of tranining data 
 
     # Handle protected_group1 (age-based grouping)
-    # Note: For SIMULATED dataset, X1 is age
+    # Note: For SIMULATED dataset, 'age' is the age variable
     if protected_group1 is not None:
         tr_protected_group1 = (tr_data[protected_group1]>65).astype(int) #Create a binary variable with two categories (more than 65 years and less or equal to 65 years)
         tr_protected_group1[tr_protected_group1==0]=2

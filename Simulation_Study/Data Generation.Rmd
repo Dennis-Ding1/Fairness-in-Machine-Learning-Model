@@ -35,7 +35,10 @@ generate_data <- function(
   colnames(X) <- paste0("X", 1:pX)
   
   # True event time 
-  eta <- beta_A * A + X %*% beta_X
+  Z <- scale(X, center = mu_X, scale = sd_X)
+  eta <- as.vector(Z %*% beta_X) + beta_A * A
+  
+  # eta <- beta_A * A + X %*% beta_X
   U <- runif(n)
   T_true <- ((-log(U)) / (lambda * exp(eta)))^(1 / k)
   
@@ -70,9 +73,29 @@ generate_data <- function(
 ```{r}
 # Example
 
-mu_X = c(40, 120)  # Age and SBP
-sd_X = c(10, 15)
-beta_X = c(0.03, 0.014)
+# X choice:
+mu_X = c(50,    # age
+         3,   # LOS (Length of Stay)
+         70,    # eGFR
+         13.2,  # Hemoglobin
+         2)     # CCI (Charlson Comorbidity Index)
+         
+
+sd_X = c(15,    # age
+         2.5,   # LOS (Length of Stay)
+         20,    # eGFR
+         1.6,  # Hemoglobin
+         1.5)     # CCI (Charlson Comorbidity Index)
+
+beta_X = c(0.3,  # age
+         0.4,   # LOS (Length of Stay)
+         -0.22,    # eGFR
+         -0.3,  # Hemoglobin
+         0.35)     # CCI (Charlson Comorbidity Index)
+
+k <- 1.2
+lambda <- 0.03
+mu <- 0.03
 
 # Scenario I: all assumptions hold
 data_I <- generate_data(
@@ -80,10 +103,13 @@ data_I <- generate_data(
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
+  lambda = lambda,
+  k = k,
+  mu = mu,
   beta_A = 0,
   alpha = 0,
-  Cmax_A0 = 10,
-  Cmax_A1 = 10
+  Cmax_A0 = 50,
+  Cmax_A1 = 50
 )
 
 # Scenario II: violation of assumptions
@@ -92,6 +118,9 @@ data_II <- generate_data(
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
+  lambda = 0.004,
+  k = 1.5,
+  mu = mu, 
   beta_A = 0.5,
   alpha = 0.5,
   Cmax_A0 = 15,
@@ -144,7 +173,7 @@ ggplot(dat, aes(x = X1, fill = factor(A))) +
 
 ggplot(dat, aes(x = X2, fill = factor(A))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
-  labs(title = "SBP Distribution by Group", fill = "Group A") +
+  labs(title = "LOS Distribution by Group", fill = "Group A") +
   theme_minimal()
 
 
