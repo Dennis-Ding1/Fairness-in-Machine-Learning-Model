@@ -6,17 +6,17 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 
-module purge
-module load gcc
-module load arrow/21.0.0
+# module purge
+# module load gcc
+# module load arrow/21.0.0
 module load python/3.11
-unset PYTHONPATH 
+# unset PYTHONPATH 
 
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 
-/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python Experiment.py \
- Experiment.py \
+# /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/.venv/bin/python Experiment.py \
+python Experiment.py \
   -i ../data/data_I.csv \
   -p . \
   -m "FIDP" \
