@@ -13,6 +13,7 @@ source $SLURM_TMPDIR/env/bin/activate
 
 pip install --no-index --upgrade pip
 pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/requirements.txt
+pip list
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 python Experiment.py \
