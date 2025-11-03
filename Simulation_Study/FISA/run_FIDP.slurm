@@ -3,7 +3,7 @@
 #SBATCH --output=outputs/hpc_run_%j.out
 #SBATCH --error=outputs/hpc_run_%j.err
 #SBATCH --time=02:00:00
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=10
 
 module load python/3.11
 module load arrow/21.0.0
@@ -22,5 +22,5 @@ python Experiment.py \
   -m "FIDP" \
   -d "SIMULATED" \
   -b 128 \
-  -lr 0.01 \
-  -e 5
+  -lr 0.5 \
+  -e 3
