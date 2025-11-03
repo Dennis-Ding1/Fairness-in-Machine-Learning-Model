@@ -89,8 +89,8 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     patience=5
     best_val_loss=10000000.0
     
-    scale=torch.tensor(0.01) ## Scale parameter
-    lamda=torch.tensor(0.1)  ## Trade-off parameter between accuracy and fairness 
+    scale=torch.tensor(0.01).to(device) ## Scale parameter
+    lamda=torch.tensor(0.1).to(device)  ## Trade-off parameter between accuracy and fairness 
 
 # ==============================================================================
 #                             Training FIDP model

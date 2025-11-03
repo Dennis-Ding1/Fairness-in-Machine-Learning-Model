@@ -36,13 +36,21 @@ class criterionHinge(nn.Module):
         N = len(prediction)
         R_beta = torch.tensor(0.0).to(device)  #initialization of individual fairness  
         zeroTerm = torch.tensor(0.0).to(device)
+        
+        # CRITICAL FIX: Convert X_distance to numpy ONCE outside the loops
+        # This avoids repeated CPU-GPU transfers in the triple loop (major performance bottleneck)
+        if isinstance(X_distance, torch.Tensor):
+            X_distance_np = X_distance.cpu().detach().numpy()
+        else:
+            X_distance_np = X_distance
+            
         for i in range(ntimes):
             for j in range(prediction.shape[0]):
                 for k in range(prediction.shape[0]):
                     if k<=j:
                         continue
                     else:                
-                        distance=cosine_distances(X_distance.cpu().detach().numpy()[j].reshape(1,-1),X_distance.cpu().detach().numpy()[k].reshape(1,-1))[0][0]
+                        distance=cosine_distances(X_distance_np[j].reshape(1,-1),X_distance_np[k].reshape(1,-1))[0][0]
                         R_beta = R_beta + torch.max(zeroTerm,(torch.abs(prediction[j,i]-prediction[k,i])-(scale*distance))) 
         model_fairness = (torch.tensor(2.0).to(device))*R_beta/(N*(N-1)*ntimes)
         
