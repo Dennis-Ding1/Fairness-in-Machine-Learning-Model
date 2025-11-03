@@ -138,6 +138,8 @@ def censoring_group_fairness(prediction_uncen, prediction_cen, X_distance_uncen,
         protected_group=["Race_ord_1","Race_ord_2","Race_ord_3","Race_ord_4"]        
     elif dataset_name=='FLChain':
         protected_group=["sex_1","sex_0"]   
+    else:
+        protected_group=["A_0","A_1"]
     
     N_uncen = len(prediction_uncen)
     N_cen = len(prediction_cen)
