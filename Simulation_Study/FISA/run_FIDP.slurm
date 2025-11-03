@@ -11,8 +11,8 @@ module load arrow/21.0.0
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 
-pip install --no-index --upgrade pip
-pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/requirements.txt
+pip install --no-index --upgrade pip > /dev/null 2>&1
+pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/requirements.txt > /dev/null 2>&1
 pip list
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
