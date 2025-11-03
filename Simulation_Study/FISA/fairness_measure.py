@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics.pairwise import cosine_distances
 # =============================================================================
 #                             Individual Fairness
@@ -144,7 +145,34 @@ def censoring_group_fairness(prediction_uncen, prediction_cen, X_distance_uncen,
     N_uncen = len(prediction_uncen)
     N_cen = len(prediction_cen)
     R_beta_total=0.0 #initialization of overall fairness
+    
+    # Convert to DataFrame if needed (for proper column indexing)
+    if not isinstance(X_distance_uncen, pd.DataFrame):
+        # If it's a numpy array, we need to create a DataFrame with column names
+        # This assumes the columns are in the same order as protected_group
+        # For SIMULATED dataset, we know the structure
+        if dataset_name == 'SIMULATED':
+            # Assume columns are: age, LOS, eGFR, Hemoglobin, CCI, A_0, A_1
+            col_names = ['age', 'LOS', 'eGFR', 'Hemoglobin', 'CCI', 'A_0', 'A_1']
+            X_distance_uncen = pd.DataFrame(X_distance_uncen, columns=col_names)
+        else:
+            # For other datasets, try to infer column names
+            X_distance_uncen = pd.DataFrame(X_distance_uncen)
+    
+    if not isinstance(X_distance_cen, pd.DataFrame):
+        if dataset_name == 'SIMULATED':
+            col_names = ['age', 'LOS', 'eGFR', 'Hemoglobin', 'CCI', 'A_0', 'A_1']
+            X_distance_cen = pd.DataFrame(X_distance_cen, columns=col_names)
+        else:
+            X_distance_cen = pd.DataFrame(X_distance_cen)
+    
     for group in protected_group:
+        if group not in X_distance_uncen.columns:
+            print(f"Warning: {group} not found in X_distance_uncen columns: {list(X_distance_uncen.columns)}")
+            continue
+        if group not in X_distance_cen.columns:
+            print(f"Warning: {group} not found in X_distance_cen columns: {list(X_distance_cen.columns)}")
+            continue
         uncen_idx=np.where(np.array(X_distance_uncen[group]==1))[0]
         cen_idx=np.where(np.array(X_distance_cen[group]==1))[0]
 

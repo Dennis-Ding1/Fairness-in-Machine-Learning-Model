@@ -106,6 +106,14 @@ def data_preprocess(data_csv_file, dataset_name):
         raise ValueError(f"Unknown dataset_name: {dataset_name}. Supported: SUPPORT, SEER, FLChain, SIMULATED")
         
     dataset = get_dummies(data_df, encode=one_hot_encoder_list)  ##Convert the categorical variables into dummy variables.
+    
+    # Convert boolean columns to int (0/1) for one-hot encoded features
+    # This is important for SIMULATED dataset where A_0 and A_1 might be boolean
+    if dataset_name == 'SIMULATED':
+        for col in ['A_0', 'A_1']:
+            if col in dataset.columns:
+                dataset[col] = dataset[col].astype(int)
+    
     data={}
     uncen_data={}
     uncen_train_val_data={}
@@ -231,6 +239,9 @@ def data_preprocess(data_csv_file, dataset_name):
     data_event_test_uncen = test_data_uncen['status']
     data_event_test_uncen = np.array(data_event_test_uncen,dtype='float32')
     data_X_test_uncen     = test_data_uncen.drop(columns=['status','time','protected_group1', 'protected_group2'])       
+    # Ensure data_X_test_uncen is DataFrame for proper indexing in fairness measures
+    if not isinstance(data_X_test_uncen, pd.DataFrame):
+        data_X_test_uncen = pd.DataFrame(data_X_test_uncen)
         
     ## Prepare the covariates, observed time and event status for censored data
     train_data_cen=train_data.loc[train_data['status']==0,:]
@@ -241,7 +252,10 @@ def data_preprocess(data_csv_file, dataset_name):
     data_time_test_cen = np.array(data_time_test_cen,dtype='float32')
     data_event_test_cen=test_data_cen['status']
     data_event_test_cen = np.array(data_event_test_cen,dtype='float32')
-    data_X_test_cen=test_data_cen.drop(columns=['status','time','protected_group1', 'protected_group2'])      
+    data_X_test_cen=test_data_cen.drop(columns=['status','time','protected_group1', 'protected_group2'])
+    # Ensure data_X_test_cen is DataFrame for proper indexing in fairness measures
+    if not isinstance(data_X_test_cen, pd.DataFrame):
+        data_X_test_cen = pd.DataFrame(data_X_test_cen)      
 
     
     ## Create dictionaries of the covariates, observed time and event status for the protected groups of entire data, uncensored data and censored data

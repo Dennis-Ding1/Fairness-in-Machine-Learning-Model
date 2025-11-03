@@ -27,22 +27,46 @@ def FIDP_train(dataloader, model, loss_fn, optimizer, ntimes, scale, lamda):
     num_batches = len(dataloader)
     model.train()
     total_loss = 0
+    total_pseudo_loss = 0
+    total_R_loss = 0
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         # Compute prediction error
         pred = model(X)
-        pseudo_loss = loss_fn(pred, y)
+        pseudo_loss_val = loss_fn(pred, y)
         target_fairness = torch.tensor(0.0).to(device)
         IFloss=criterionHinge() ## Fairness penalty constraint
-        R_loss = IFloss(target_fairness,pred,X, ntimes, scale)
+        R_loss_val = IFloss(target_fairness,pred,X, ntimes, scale)
         # calculate loss
-        loss = pseudo_loss + lamda*R_loss        
+        loss = pseudo_loss_val + lamda*R_loss_val        
         # Backpropagation
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
+        
+        # Check for gradient issues (only on first batch)
+        if batch == 0:
+            grad_norm = 0.0
+            param_count = 0
+            for param in model.parameters():
+                if param.grad is not None:
+                    grad_norm += param.grad.data.norm(2).item() ** 2
+                    param_count += 1
+            grad_norm = grad_norm ** 0.5
+            if grad_norm < 1e-8:
+                print(f"  WARNING: Very small gradient norm: {grad_norm:.2e}")
+        
         optimizer.step()
-        total_loss += float(loss.item()) 
-    total_loss /= num_batches    
+        total_loss += float(loss.item())
+        total_pseudo_loss += float(pseudo_loss_val.item())
+        total_R_loss += float(R_loss_val.item())
+    total_loss /= num_batches
+    total_pseudo_loss /= num_batches
+    total_R_loss /= num_batches
+    
+    # Print detailed loss breakdown (only occasionally to avoid spam)
+    if num_batches > 0:
+        print(f"  Loss breakdown - Pseudo: {total_pseudo_loss:.6f}, Fairness: {total_R_loss:.6f} (λ={lamda.item():.3f}), Total: {total_loss:.6f}")
+    
     return total_loss
 
 # ==============================================================================
@@ -106,22 +130,46 @@ def FIPNAM_train(dataloader, model, loss_fn, optimizer, ntimes, scale, lamda):
     num_batches = len(dataloader)
     model.train()
     total_loss = 0
+    total_pseudo_loss = 0
+    total_R_loss = 0
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         # Compute prediction error
         pred,_ = model(X)
-        pseudo_loss = loss_fn(pred, y)
+        pseudo_loss_val = loss_fn(pred, y)
         target_fairness = torch.tensor(0.0).to(device)
         IFloss=criterionHinge() ## Fairness penalty constraint
-        R_loss = IFloss(target_fairness,pred,X, ntimes, scale)
+        R_loss_val = IFloss(target_fairness,pred,X, ntimes, scale)
         # calculate loss
-        loss = pseudo_loss + lamda*R_loss        
+        loss = pseudo_loss_val + lamda*R_loss_val        
         # Backpropagation
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
+        
+        # Check for gradient issues (only on first batch)
+        if batch == 0:
+            grad_norm = 0.0
+            param_count = 0
+            for param in model.parameters():
+                if param.grad is not None:
+                    grad_norm += param.grad.data.norm(2).item() ** 2
+                    param_count += 1
+            grad_norm = grad_norm ** 0.5
+            if grad_norm < 1e-8:
+                print(f"  WARNING: Very small gradient norm: {grad_norm:.2e}")
+        
         optimizer.step()
-        total_loss += float(loss.item()) 
-    total_loss /= num_batches    
+        total_loss += float(loss.item())
+        total_pseudo_loss += float(pseudo_loss_val.item())
+        total_R_loss += float(R_loss_val.item())
+    total_loss /= num_batches
+    total_pseudo_loss /= num_batches
+    total_R_loss /= num_batches
+    
+    # Print detailed loss breakdown
+    if num_batches > 0:
+        print(f"  Loss breakdown - Pseudo: {total_pseudo_loss:.6f}, Fairness: {total_R_loss:.6f} (λ={lamda.item():.3f}), Total: {total_loss:.6f}")
+    
     return total_loss
         
 # ==============================================================================
