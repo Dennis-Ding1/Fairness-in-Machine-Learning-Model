@@ -84,13 +84,24 @@ def FIDP_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_tra
     
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    sp_test = model(torch.tensor(np.array(data_X_test, dtype='float32')).to(device)).cpu().detach().numpy() ## Predict survival probabilities for test data
+    # Use forward_prob to get probabilities in [0,1] range for evaluation
+    if hasattr(model, 'forward_prob'):
+        sp_test = model.forward_prob(torch.tensor(np.array(data_X_test, dtype='float32')).to(device)).cpu().detach().numpy()
+    else:
+        # Fallback: apply sigmoid if method doesn't exist
+        sp_test = torch.sigmoid(model(torch.tensor(np.array(data_X_test, dtype='float32')).to(device))).cpu().detach().numpy()
     cif_test = 1-sp_test   
             
-    sp_test_uncen = model(torch.tensor(np.array(X_test_uncen, dtype='float32')).to(device)).cpu().detach().numpy() ## Predict survival probabilities for uncensored test data
+    if hasattr(model, 'forward_prob'):
+        sp_test_uncen = model.forward_prob(torch.tensor(np.array(X_test_uncen, dtype='float32')).to(device)).cpu().detach().numpy()
+    else:
+        sp_test_uncen = torch.sigmoid(model(torch.tensor(np.array(X_test_uncen, dtype='float32')).to(device))).cpu().detach().numpy()
     cif_test_uncen = 1-sp_test_uncen  
        
-    sp_test_cen = model(torch.tensor(np.array(X_test_cen, dtype='float32')).to(device)).cpu().detach().numpy() ## Predict survival probabilities for censored test data
+    if hasattr(model, 'forward_prob'):
+        sp_test_cen = model.forward_prob(torch.tensor(np.array(X_test_cen, dtype='float32')).to(device)).cpu().detach().numpy()
+    else:
+        sp_test_cen = torch.sigmoid(model(torch.tensor(np.array(X_test_cen, dtype='float32')).to(device))).cpu().detach().numpy()
     cif_test_cen = 1-sp_test_cen 
     
     
@@ -269,7 +280,12 @@ def DP_Concordance(model,x,durations,events, evaltime):
     """     
     device = "cuda" if torch.cuda.is_available() else "cpu" 
     x=x.to(device)
-    surv   = model(x)
+    # Use forward_prob to get probabilities in [0,1] range for evaluation
+    if hasattr(model, 'forward_prob'):
+        surv = model.forward_prob(x)
+    else:
+        # Fallback: apply sigmoid if method doesn't exist
+        surv = torch.sigmoid(model(x))
     y_pred = pd.DataFrame(np.transpose(surv.cpu().detach().numpy()))
     y_pred = y_pred.set_index([evaltime])
     ev     = EvalSurv(y_pred, durations, events)

@@ -21,12 +21,17 @@ class FIDP(nn.Module):
             nn.Linear(64, 64), nn.SELU(),nn.Dropout(p=0.4),
             nn.Linear(64, 32), nn.SELU(),nn.Dropout(p=0.4),
             nn.Linear(32, 32), nn.SELU(),nn.Dropout(p=0.4),
-            nn.Linear(32, out_features), nn.Sigmoid()
+            nn.Linear(32, out_features)  # Removed Sigmoid to allow output beyond [0,1] for pseudo values
         )
 
     def forward(self, input):
         output = self.surv_net(input)
         return output
+    
+    def forward_prob(self, input):
+        """Forward pass with sigmoid activation for probability outputs (used in evaluation)"""
+        output = self.surv_net(input)
+        return torch.sigmoid(output)
     
 
 
