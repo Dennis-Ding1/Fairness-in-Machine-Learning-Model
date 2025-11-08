@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=FISA_SIM
-#SBATCH --output=outputs/hpc_run_%j.out
-#SBATCH --error=outputs/hpc_run_%j.err
+#SBATCH --job-name=FIDP_FLC
+#SBATCH --output=outputs/FIDP_FLC_%j.out
+#SBATCH --error=outputs/FIDP_FLC_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
@@ -17,7 +17,7 @@ pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/r
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 python Experiment.py \
-  -i Data/FLC/flchain.csv \
+  -i Data/FLChain/flchain.csv \
   -p . \
   -m "FIDP" \
   -d "FLChain" \
