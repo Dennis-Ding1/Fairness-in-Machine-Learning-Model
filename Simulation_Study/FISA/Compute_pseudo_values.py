@@ -58,7 +58,12 @@ def survival_function(time, status):
         r_last = r
         d_last = d
         c_last = c
-    surv=np.cumprod(1-(full_matrix[:,2]/full_matrix[:,1])) 
+    # divide by zero warning
+    with np.errstate(divide='ignore', invalid='ignore'):
+        hazard_ratio = np.divide(full_matrix[:,2], full_matrix[:,1], 
+                                 out=np.zeros_like(full_matrix[:,2]), 
+                                 where=(full_matrix[:,1] != 0) & ~np.isnan(full_matrix[:,1]))
+        surv = np.cumprod(1 - hazard_ratio) 
     
     
     return partial_matrix, surv
@@ -82,7 +87,12 @@ def loo_survival_function(partial_matrix, time, status):
         for p in range(len(Surv_Eval_Time)-1):
             loo_matrix[i,(p+1),0]=loo_matrix[i, (p),0]-(loo_matrix[i, (p),1]+loo_matrix[i,(p),2])   
     for j in range(len(time)):        
-        loo_surv_prob[j,:]=np.cumprod(1-(loo_matrix[j,:,1]/loo_matrix[j,:,0]))
+        # divide by zero warning
+        with np.errstate(divide='ignore', invalid='ignore'):
+            hazard_ratio = np.divide(loo_matrix[j,:,1], loo_matrix[j,:,0], 
+                                     out=np.zeros_like(loo_matrix[j,:,1]), 
+                                     where=(loo_matrix[j,:,0] != 0) & ~np.isnan(loo_matrix[j,:,0]))
+            loo_surv_prob[j,:] = np.cumprod(1 - hazard_ratio)
     return loo_surv_prob
 
 def pseudo_values(data, evaltime):
