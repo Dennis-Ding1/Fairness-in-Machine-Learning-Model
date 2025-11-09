@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=FISA_SIM
-#SBATCH --output=outputs/hpc_run_%j.out
-#SBATCH --error=outputs/hpc_run_%j.err
+#SBATCH --job-name=FIDP_SIM_GPU
+#SBATCH --output=outputs/FIDP_SIM_GPU_%j.out
+#SBATCH --error=outputs/FIDP_SIM_GPU_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1  
@@ -23,6 +23,7 @@ python Experiment.py \
   -p . \
   -m "FIDP" \
   -d "SIMULATED" \
-  -b 128 \
+  -b 32 \
   -lr 0.01 \
-  -e 20
+  -e 10
+
