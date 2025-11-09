@@ -21,6 +21,6 @@ python Experiment.py \
   -p . \
   -m "FIDP" \
   -d "FLChain" \
-  -b 32 \
+  -b 128 \
   -lr 0.01 \
   -e 50
