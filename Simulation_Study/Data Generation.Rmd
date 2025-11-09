@@ -3,6 +3,13 @@ title: "Data Generation"
 ---
 
 ```{r}
+library(ggplot2)
+library(survival)
+library(tidyverse)
+```
+
+
+```{r}
 generate_data <- function(
   n = 2000,
   pA = 0.5,
@@ -12,7 +19,9 @@ generate_data <- function(
   beta_A = 0,                 # group effect
   lambda = 0.004,             # baseline rate for Weibull
   k = 1.5,                    # shape parameter
-  mu = 0.1,                   # baseline censoring rate
+  # mu,                   # baseline censoring rate
+  b_c,
+  p_c,
   alpha = 0,                  # censoring dependence
   Cmax_A0 = 10,               # max follow-up (group 0)
   Cmax_A1 = 10,               # max follow-up (group 1)
@@ -42,11 +51,14 @@ generate_data <- function(
   U <- runif(n)
   T_true <- ((-log(U)) / (lambda * exp(eta)))^(1 / k)
   
-  #  Censoring time
-  C <- rexp(n, rate = mu * exp(alpha * eta))
-  
   # Max follow-up
   Cmax <- ifelse(A == 0, Cmax_A0, Cmax_A1)
+  
+  #  Censoring time
+  Uc <- runif(n)
+  biased_Uc <- Uc^(exp(alpha * eta))
+  C <- (biased_Uc)^(1 / p_c) * Cmax
+  # C <- (biased_Uc)^(1 / p_c) * max(Cmax_A0, Cmax_A1)
   
   # Observed data
   Y <- pmin(T_true, C, Cmax)
@@ -93,9 +105,18 @@ beta_X = c(0.3,  # age
          -0.3,  # Hemoglobin
          0.35)     # CCI (Charlson Comorbidity Index)
 
-k <- 1.2
-lambda <- 0.03
-mu <- 0.03
+# beta_X = c(0.3,  # age
+#          0.4,   # LOS (Length of Stay)
+#          -0.25,    # eGFR
+#          -0.3,  # Hemoglobin
+#          0.4)     # CCI (Charlson Comorbidity Index)
+
+k <- 3
+lambda <- 1e-10
+
+b_c <- 3000
+p_c <- 3
+
 
 # Scenario I: all assumptions hold
 data_I <- generate_data(
@@ -105,12 +126,14 @@ data_I <- generate_data(
   beta_X = beta_X,
   lambda = lambda,
   k = k,
-  mu = mu,
+  b_c = b_c,
+  p_c = p_c,
   beta_A = 0,
   alpha = 0,
-  Cmax_A0 = 50,
-  Cmax_A1 = 50
+  Cmax_A0 =3000,
+  Cmax_A1 = 3000
 )
+data_I <- data_I |> filter(age > 1, C > 1)
 
 # Scenario II: violation of assumptions
 data_II <- generate_data(
@@ -118,27 +141,28 @@ data_II <- generate_data(
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
-  lambda = 0.004,
-  k = 1.5,
-  mu = mu, 
-  beta_A = 0.5,
+  lambda = lambda,
+  k = k,
+  b_c = b_c,
+  p_c = p_c,
+  beta_A = -0.5,
   alpha = 0.5,
-  Cmax_A0 = 15,
-  Cmax_A1 = 10
+  Cmax_A0 = 3000,
+  Cmax_A1 = 3500
 )
 
+data_II <- data_II |> filter(age > 1, C > 1)
 
-head(data_I)
-head(data_II)
+
+# head(data_I)
+# head(data_II)
 
 
 ```
 
 ```{r}
-# Quick EDA
-library(ggplot2)
-
 dat <- data_I
+# dat <- read.csv("data/data_I.csv")
 
 cat("Dataset size:", nrow(dat), "\n")
 cat("Columns:", names(dat), "\n")
@@ -151,6 +175,23 @@ mean(dat$Delta == 0)
 cat("\nCensoring rate by group (A=0, A=1):\n")
 tapply(dat$Delta == 0, dat$A, mean)
 
+summary(dat$C)
+
+ggplot(dat, aes((x = C), fill = factor(A))) +
+  geom_histogram(alpha = 0.5, bins = 50, position = "identity") +
+  labs(
+    title = "Non-informative Censoring Time C Distribution",
+    x = "C",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+ggplot(dat, aes(x = T_true)) +
+  geom_histogram(bins = 40, fill = "skyblue", color = "white") +
+  labs(title = "True Time Distribution",
+       x = "True Time (T)",
+       y = "Count")+
+  theme_minimal()
 
 ggplot(dat, aes(x = Y, fill = factor(A))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
@@ -180,80 +221,146 @@ ggplot(dat, aes(x = LOS, fill = factor(A))) +
 ```
 
 ```{r}
+dat <- data_II
+
+cat("Dataset size:", nrow(dat), "\n")
+cat("Columns:", names(dat), "\n")
+
+summary(dat)
+
+cat("\nOverall censoring rate:\n")
+mean(dat$Delta == 0)
+
+cat("\nCensoring rate by group (A=0, A=1):\n")
+tapply(dat$Delta == 0, dat$A, mean)
+
+summary(dat$C)
+
+ggplot(dat, aes((x = C), fill = factor(A))) +
+  geom_histogram(alpha = 0.5, bins = 50, position = "identity") +
+  labs(
+    title = "Informative Censoring Time C Distribution",
+    x = "C",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+ggplot(dat, aes(x = T_true)) +
+  geom_histogram(bins = 40, fill = "skyblue", color = "white") +
+  labs(title = "True Time Distribution",
+       x = "True Time (T)",
+       y = "Count")+
+  theme_minimal()
+
+ggplot(dat, aes(x = Y, fill = factor(A))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Observed Time Distribution by Group",
+       x = "Observed Time (Y)",
+       fill = "Group A") +
+  theme_minimal()
+
+ggplot(dat, aes(x = Y, fill = factor(Delta))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Events (Δ=1) vs Censored (Δ=0)",
+       x = "Observed Time",
+       fill = "Event Indicator") +
+  theme_minimal()
+
+ggplot(dat, aes(x = age, fill = factor(A))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Age Distribution by Group", fill = "Group A") +
+  theme_minimal()
+
+ggplot(dat, aes(x = LOS, fill = factor(A))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "LOS Distribution by Group", fill = "Group A") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
 write.csv(data_I, "data/data_I.csv", row.names = FALSE)
 write.csv(data_II, "data/data_II.csv", row.names = FALSE)
 ```
 
 
 ```{r}
-library(survival)
 fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI, data = data_I, x = TRUE)
 summary(fit)$concordance 
 ```
 
 ```{r}
-library(pec)
+fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI, data = data_II, x = TRUE)
+summary(fit)$concordance 
+```
 
-# ==========================================
-# Function: evaluate_IBS
-# ==========================================
-# 输入：
-#   fit       - 已拟合好的 coxph 模型对象
-#   data      - 用于评估的 data.frame
-#   time_col  - 存储生存时间的列名（字符串）
-#   status_col - 存储删失指标的列名（字符串）
-# 输出：
-#   返回 IBS 值，并绘制 Brier Score 曲线
-# ==========================================
 
-evaluate_IBS <- function(fit, data, time_col = "Y", status_col = "Delta") {
-  # Step 1. 计算时间点
-  time_vec  <- data[[time_col]]
-  eval_time <- as.numeric(quantile(time_vec, probs = c(0.25, 0.5, 0.75), na.rm = TRUE))
-  
-  # Step 2. 构建生存公式
-  fm <- as.formula(paste0("Surv(", time_col, ", ", status_col, ") ~ 1"))
-  
-  # Step 3. 计算 time-dependent Brier scores
-  pe <- pec(
-    object     = list(Cox = fit),
-    formula    = fm,
-    data       = data,
-    times      = eval_time,
-    cens.model = "cox",
-    splitMethod = "none"
-  )
-  
-  # Step 4. 提取结果
-  # pec 的 AppErr 是 matrix: 行=时间点, 列=模型
-  appErr <- as.data.frame(pe$AppErr)
-  time_points <- as.numeric(rownames(appErr))
-  model_col <- colnames(appErr)[1]
-  df_brier <- data.frame(time = time_points, brier = appErr[[model_col]])
-  
-  # Step 5. 计算 IBS（积分）
-  ibs_val <- pec::ibs(pe)
-  trapz_ibs <- with(df_brier, sum(diff(time) * (head(brier, -1) + tail(brier, -1)) / 2) / (max(time) - min(time)))
-  
-  # Step 6. 绘图
-  plot(df_brier$time, df_brier$brier, type = "b", pch = 19, col = "steelblue",
-       xlab = "Time", ylab = "Brier Score",
-       main = sprintf("Integrated Brier Score (IBS) = %.4f", ibs_val))
-  grid()
-  
-  # Step 7. 输出结果
-  cat("Evaluation times (25%, 50%, 75%):", paste(round(eval_time, 3), collapse = ", "), "\n")
-  cat("Brier Scores:", paste(round(df_brier$brier, 4), collapse = ", "), "\n")
-  cat("IBS (pec::ibs):", round(ibs_val, 4), "\n")
-  cat("IBS (trapz approx):", round(trapz_ibs, 4), "\n")
-  
-  invisible(list(times = eval_time, brier_table = df_brier, IBS = ibs_val, IBS_trapz = trapz_ibs))
-}
-
-result <- evaluate_IBS(fit, data_I, time_col = "Y", status_col = "Delta")
+```{r}
+flc <- read.csv("FISA/Data/FLChain/flchain.csv")
 
 ```
 
+```{r}
+cat("Dataset size:", nrow(flc), "\n")
+cat("Columns:", names(flc), "\n")
+
+summary(flc)
+
+cat("\nOverall censoring rate:\n")
+mean(flc$status == 0)
+
+cat("\nCensoring rate by sex:\n")
+tapply(flc$status == 0, flc$sex, mean)
+
+ggplot(flc, aes(x = time, fill = factor(sex))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Observed Time Distribution by sex",
+       x = "Observed Time (Y)",
+       fill = "sex") +
+  theme_minimal()
+
+ggplot(flc, aes(x = time, fill = factor(status))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Events (Δ=1) vs Censored (Δ=0)",
+       x = "Observed Time",
+       fill = "Event Indicator") +
+  theme_minimal()
+
+ggplot(flc, aes(x = age, fill = factor(sex))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "Age Distribution by sex", fill = "sex") +
+  theme_minimal()
+
+flc |> filter(kappa < 10) |> 
+  ggplot(aes(x = kappa, fill = factor(sex))) +
+    geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+    labs(title = "< 10 kappa Distribution by sex", fill = "sex") +
+    theme_minimal()
+
+flc |> filter(lambda < 10) |> 
+  ggplot(aes(x = lambda, fill = factor(sex))) +
+  geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+  labs(title = "< 10 lambda Distribution by sex", fill = "sex") +
+  theme_minimal()
+
+ggplot(flc, aes(x = flc.grp, fill = factor(sex))) +
+  geom_bar(alpha = 0.5, position = "identity") +
+  labs(title = "flc.grp Distribution by sex", fill = "sex") +
+  theme_minimal()
+
+flc |> filter(creatinine < 4) |> 
+  ggplot(aes(x = creatinine, fill = factor(sex))) +
+    geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
+    labs(title = "< 4 creatinine Distribution by sex", fill = "sex") +
+    theme_minimal()
+
+ggplot(flc, aes(x = mgus, fill = factor(sex))) +
+  geom_bar(alpha = 0.5, position = "identity") +
+  labs(title = "mgus Distribution by sex", fill = "sex") +
+  theme_minimal()
+```
 
 
 
