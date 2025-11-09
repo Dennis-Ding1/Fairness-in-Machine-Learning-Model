@@ -21,9 +21,11 @@ def set_random_seed(state=1):
     Returns:
         fixed random seed
     """   
-    gens = (np.random.seed, torch.manual_seed, torch.cuda.manual_seed)
-    for set_state in gens:
-        set_state(state)
+    np.random.seed(state)
+    torch.manual_seed(state)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(state)
+        torch.cuda.manual_seed_all(state)  # For multi-GPU setups
 
 def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs):
     # Configure logging to output to console
@@ -36,7 +38,10 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
-        torch.cuda.set_device(0)
+        try:
+            torch.cuda.set_device(0)
+        except Exception as e:
+            print(f"Warning: Could not set CUDA device: {e}. Continuing with default device.")
         
     RANDOM_STATE = 1
     set_random_seed(RANDOM_STATE) # Set random seed
@@ -132,7 +137,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
         
         ## Evaluation
-        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=torch.device('cpu')))
+        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=device))
         model.eval()       
 
         scale_fairness = 0.01 ## Scale parameter
@@ -190,7 +195,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
         
          ## Evaluation
-        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=torch.device('cpu')))
+        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=device))
         model.eval()       
 
         scale_fairness = 0.01 ## Scale parameter
@@ -267,7 +272,10 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
-    torch.cuda.set_device(0)
+    try:
+        torch.cuda.set_device(0)
+    except Exception as e:
+        print(f"Warning: Could not set CUDA device: {e}. Continuing with default device.")
 
 import scipy.integrate
 if not hasattr(scipy.integrate, "simps"):
