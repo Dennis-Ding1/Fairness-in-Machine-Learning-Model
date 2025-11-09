@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=FIPNAM_FLC
-#SBATCH --output=outputs/FIPNAM_FLC_%j.out
-#SBATCH --error=outputs/FIPNAM_FLC_%j.err
+#SBATCH --job-name=FIPNAM_SIM
+#SBATCH --output=outputs/FIPNAM_SIM_%j.out
+#SBATCH --error=outputs/FIPNAM_SIM_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
@@ -17,10 +17,10 @@ pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/r
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 python Experiment.py \
-  -i Data/FLChain/flchain.csv \
+  -i ../data/data_I.csv \
   -p . \
   -m "FIPNAM" \
-  -d "FLChain" \
+  -d "SIMULATED" \
   -b 32 \
   -lr 0.01 \
   -e 50
