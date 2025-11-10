@@ -16,8 +16,8 @@ module load arrow/21.0.0
 module load StdEnv/2023
 module load scipy-stack/2025a
 
-virtualenv --no-download $SLURM_TMPDIR/env
-source $SLURM_TMPDIR/env/bin/activate
+virtualenv --no-download $TMPDIR/env
+source $TMPDIR/env/bin/activate
 
 pip install --no-index --upgrade pip > /dev/null 2>&1
 pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/requirements.txt > /dev/null 2>&1
