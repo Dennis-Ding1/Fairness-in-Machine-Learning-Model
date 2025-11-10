@@ -53,7 +53,7 @@ def get_num_units(
 ) -> List:
     # Convert to CPU for numpy operations, handling both CPU and GPU tensors
     if features.is_cuda:
-    features = features.cpu()
+        features = features.cpu()
     elif not isinstance(features, torch.Tensor):
         features = torch.tensor(features)
     num_unique_vals = [len(np.unique(features[:, i])) for i in range(features.shape[1])]
