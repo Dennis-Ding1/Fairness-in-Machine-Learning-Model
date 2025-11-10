@@ -35,10 +35,10 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     if dataset_name == 'SIMULATED':
         import os
         basename = os.path.basename(fn_csv)
-        if 'data_I' in basename:
-            dataset_identifier = 'SIMULATED_I'
-        elif 'data_II' in basename:
+        if 'data_II' in basename:
             dataset_identifier = 'SIMULATED_II'
+        elif 'data_I' in basename:
+            dataset_identifier = 'SIMULATED_I'
     
     print(f"Starting experiment: {model_name} on {dataset_identifier}")
     print(f"Data file: {fn_csv}")
