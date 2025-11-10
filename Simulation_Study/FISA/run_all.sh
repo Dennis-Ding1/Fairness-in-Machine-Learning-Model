@@ -1,0 +1,6 @@
+sbatch run_FIDP_FLC.slurm
+sbatch run_FIDP_SIM_I.slurm
+sbatch run_FIDP_SIM_II.slurm
+sbatch run_FIPNAM_FLC.slurm
+sbatch run_FIPNAM_SIM_I.slurm
+sbatch run_FIPNAM_SIM_II.slurm
