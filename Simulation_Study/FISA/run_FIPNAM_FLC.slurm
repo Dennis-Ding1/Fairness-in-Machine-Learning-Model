@@ -1,10 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=FIPNAM_FLC
-#SBATCH --output=outputs/FIPNAM_FLC_%j.out
-#SBATCH --error=outputs/FIPNAM_FLC_%j.err
-#SBATCH --time=02:00:00
+#SBATCH --output=outputs/FIPNAM_FLC_%A_%a.out
+#SBATCH --error=outputs/FIPNAM_FLC_%A_%a.err
+#SBATCH --time=05:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
+#SBATCH --array=0-2
+
+LAMBDA_VALUES=(0 0.01 0.02)
+
+LAMBDA=${LAMBDA_VALUES[$SLURM_ARRAY_TASK_ID]}
 
 module load python/3.11
 module load arrow/21.0.0
@@ -23,4 +28,5 @@ python Experiment.py \
   -d "FLChain" \
   -b 128 \
   -lr 0.01 \
-  -e 50
+  -e 30 \
+  -l $LAMBDA

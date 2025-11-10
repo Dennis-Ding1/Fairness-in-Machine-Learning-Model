@@ -2,7 +2,7 @@
 #SBATCH --job-name=FIDP_SIM_I
 #SBATCH --output=outputs/FIDP_SIM_I_%A_%a.out
 #SBATCH --error=outputs/FIDP_SIM_I_%A_%a.err
-#SBATCH --time=02:00:00
+#SBATCH --time=05:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
 #SBATCH --array=0-2
@@ -28,5 +28,5 @@ python Experiment.py \
   -d "SIMULATED" \
   -b 128 \
   -lr 0.01 \
-  -e 20 \
+  -e 30 \
   -l $LAMBDA

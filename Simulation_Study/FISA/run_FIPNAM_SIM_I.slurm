@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=FIDP_SIM_II
-#SBATCH --output=outputs/FIDP_SIM_II_%A_%a.out
-#SBATCH --error=outputs/FIDP_SIM_II_%A_%a.err
+#SBATCH --job-name=FIPNAM_SIM_I
+#SBATCH --output=outputs/FIPNAM_SIM_I_%A_%a.out
+#SBATCH --error=outputs/FIPNAM_SIM_I_%A_%a.err
 #SBATCH --time=05:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
@@ -22,9 +22,9 @@ pip install --no-index -r /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/r
 
 cd /scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
 python Experiment.py \
-  -i ../data/data_II.csv \
+  -i ../data/data_I.csv \
   -p . \
-  -m "FIDP" \
+  -m "FIPNAM" \
   -d "SIMULATED" \
   -b 128 \
   -lr 0.01 \
