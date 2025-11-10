@@ -13,6 +13,8 @@ LAMBDA=${LAMBDA_VALUES[$SLURM_ARRAY_TASK_ID]}
 
 module load python/3.11
 module load arrow/21.0.0
+module load StdEnv/2023
+module load scipy-stack/2025a
 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
