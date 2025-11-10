@@ -5,6 +5,7 @@ import torch
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from model import *
 from fairness_measure import *
 from utils import *
@@ -112,13 +113,15 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     scale=torch.tensor(SCALE_PARAM).to(device) ## Scale parameter (used in training)
     lamda=torch.tensor(LAMDA_PARAM).to(device)  ## Trade-off parameter between accuracy and fairness 
 
+    # Initialize loss lists for plotting
+    train_losses = []
+    val_losses = []
+
 # ==============================================================================
 #                             Training FIDP model
 # ==============================================================================    
      
     if model_name=='FIDP':        
-        train_losses=[]
-        val_losses=[]
         cindex=[]
         for epoch in range(Epochs):
             print(f"Epoch {epoch+1}\n-------------------------------")        
@@ -179,8 +182,6 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
 # ==============================================================================             
             
     elif model_name=='FIPNAM':        
-        train_losses=[]
-        val_losses=[]
         cindex=[]
         for epoch in range(Epochs):
             print(f"Epoch {epoch+1}\n-------------------------------")                
@@ -266,9 +267,35 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     # Create DataFrame and save to CSV
     df_results = pd.DataFrame(results_dict)
     lamda_str = str(lamda_param).replace('.', '_')
+    
+    # Ensure Results directory exists
+    results_dir = '{}/Results'.format(path_name)
+    os.makedirs(results_dir, exist_ok=True)
+    
     csv_path = '{}/Results/Results_{}_{}_lambda_{}.csv'.format(path_name, model_name, dataset_identifier, lamda_str)
     df_results.to_csv(csv_path, index=False)
     print(f'Your result is ready!!! Saved to: {csv_path}')
+    
+    # Plot training and validation loss curves
+    if train_losses and val_losses and len(train_losses) == len(val_losses) and len(train_losses) > 0:
+        plt.figure(figsize=(10, 6))
+        epochs_range = range(1, len(train_losses) + 1)
+        plt.plot(epochs_range, train_losses, 'b-', label='Train Loss', linewidth=2)
+        plt.plot(epochs_range, val_losses, 'r-', label='Validation Loss', linewidth=2)
+        plt.xlabel('Epoch', fontsize=12)
+        plt.ylabel('Loss', fontsize=12)
+        plt.title(f'Training and Validation Loss - {model_name} on {dataset_identifier} (λ={lamda_param})', fontsize=14)
+        plt.legend(fontsize=11)
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        # Save plot with same name as CSV but with .png extension
+        plot_path = csv_path.replace('.csv', '.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f'Loss plot saved to: {plot_path}')
+    elif train_losses or val_losses:
+        print('Warning: Loss lists have different lengths or are empty. Skipping plot generation.')
     
     return
 

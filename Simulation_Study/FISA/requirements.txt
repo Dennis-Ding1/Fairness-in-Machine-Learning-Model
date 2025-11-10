@@ -6,3 +6,4 @@ rpy2==3.4.5
 torch==1.9.1+cu111
 pycox==0.2.3
 sksurv==0.16.0
+matplotlib
