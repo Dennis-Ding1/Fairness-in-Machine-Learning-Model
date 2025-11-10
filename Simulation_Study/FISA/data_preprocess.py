@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
-from random import sample
+import random
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from Compute_pseudo_values import *
-np.random.seed(1234)
+# Note: Random seed should be set in the main experiment script before calling data_preprocess
+# This ensures all random operations use the same seed
 
 
 

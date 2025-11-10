@@ -3,6 +3,7 @@ import copy
 import argparse
 import torch
 import os
+import random
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,11 +21,25 @@ def set_random_seed(state=1):
     Returns:
         fixed random seed
     """   
+    # Python random module
+    random.seed(state)
+    
+    # NumPy random
     np.random.seed(state)
+    
+    # PyTorch random
     torch.manual_seed(state)
+    
+    # CUDA random (if available)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(state)
         torch.cuda.manual_seed_all(state)  # For multi-GPU setups
+        # Set deterministic algorithms for reproducibility
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    
+    # Python hash seed for dictionary ordering
+    os.environ['PYTHONHASHSEED'] = str(state)
 
 def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs, lamda_param=0.01):
     # Configure logging to output to console
