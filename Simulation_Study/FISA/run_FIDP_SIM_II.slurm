@@ -11,8 +11,17 @@ LAMBDA_VALUES=(0 0.01 0.02)
 
 LAMBDA=${LAMBDA_VALUES[$SLURM_ARRAY_TASK_ID]}
 
+module purge
+module load StdEnv/2023
 module load python/3.11
 module load arrow/21.0.0
+module load scipy-stack/2025a
+
+export MPLCONFIGDIR=$SLURM_TMPDIR/mpl-config
+export XDG_CACHE_HOME=$SLURM_TMPDIR/mpl-cache
+mkdir -p $MPLCONFIGDIR
+mkdir -p $XDG_CACHE_HOME
+export MPLBACKEND=Agg
 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
