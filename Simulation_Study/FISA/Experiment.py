@@ -25,13 +25,24 @@ def set_random_seed(state=1):
         torch.cuda.manual_seed(state)
         torch.cuda.manual_seed_all(state)  # For multi-GPU setups
 
-def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs):
+def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs, lamda_param=0.01):
     # Configure logging to output to console
     logging.basicConfig(level=logging.INFO, format='%(message)s', force=True)
     
-    print(f"Starting experiment: {model_name} on {dataset_name}")
+    # data_I.csv -> SIMULATED_I, data_II.csv -> SIMULATED_II
+    dataset_identifier = dataset_name
+    if dataset_name == 'SIMULATED':
+        import os
+        basename = os.path.basename(fn_csv)
+        if 'data_I' in basename:
+            dataset_identifier = 'SIMULATED_I'
+        elif 'data_II' in basename:
+            dataset_identifier = 'SIMULATED_II'
+    
+    print(f"Starting experiment: {model_name} on {dataset_identifier}")
     print(f"Data file: {fn_csv}")
     print(f"Batch size: {batch_size}, Learning rate: {lr}, Epochs: {epochs}")
+    print(f"Lambda (fairness-accuracy trade-off): {lamda_param}")
     print("-" * 60)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -92,8 +103,14 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     patience=5
     best_val_loss=10000000.0
     
-    scale=torch.tensor(0.01).to(device) ## Scale parameter
-    lamda=torch.tensor(0.1).to(device)  ## Trade-off parameter between accuracy and fairness 
+    # Fairness parameters - unified for training and evaluation
+    SCALE_PARAM = 0.01  ## Scale parameter for Lipschitz constraint (used in individual fairness, censoring-based individual fairness, and censoring-based group fairness)
+    LAMDA_PARAM = lamda_param   ## Trade-off parameter between accuracy and fairness
+    
+    print(f"Fairness parameters - Scale: {SCALE_PARAM} (FIXED), Lambda: {LAMDA_PARAM}")
+    
+    scale=torch.tensor(SCALE_PARAM).to(device) ## Scale parameter (used in training)
+    lamda=torch.tensor(LAMDA_PARAM).to(device)  ## Trade-off parameter between accuracy and fairness 
 
 # ==============================================================================
 #                             Training FIDP model
@@ -123,7 +140,9 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
                 best_val_loss = val_loss
                 es = 0
 
-                torch.save(model.state_dict(), '{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name))
+                # Format lambda for filename (replace . with _)
+                lamda_str = str(lamda_param).replace('.', '_')
+                torch.save(model.state_dict(), '{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str))
             else:
                 es += 1
                 print("Counter {} of {}".format(es,patience))
@@ -135,10 +154,11 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
         
         ## Evaluation
-        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=device))
+        lamda_str = str(lamda_param).replace('.', '_')
+        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str), map_location=device))
         model.eval()       
 
-        scale_fairness = 0.01 ## Scale parameter
+        scale_fairness = SCALE_PARAM  ## Scale parameter (should match training scale)
 
         cindex_all, brier_all, mean_auc_all, F_ind_all, F_cen_ind_all, F_cen_group_all, F_group_prot_1_all, F_group_prot_2_all =  FIDP_Evaluation(model, data_X_test, data_X_test_uncen,  data_X_test_cen, data_time_train, data_time_train_uncen, data_time_train_cen, data_time_test, data_time_test_cen,  data_time_test_uncen, data_event_train, data_event_test, data_event_test_uncen, data_event_test_cen, np.array(test_data['protected_group1']).astype(int), np.array(test_data['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name)  ## Compute the accuracy and fairness measures
 
@@ -180,7 +200,9 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
                 best_val_loss = val_loss
                 es = 0
 
-                torch.save(model.state_dict(), '{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name))
+                # Format lambda for filename (replace . with _)
+                lamda_str = str(lamda_param).replace('.', '_')
+                torch.save(model.state_dict(), '{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str))
             else:
                 es += 1
                 print("Counter {} of {}".format(es,patience))
@@ -193,10 +215,11 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
         
          ## Evaluation
-        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}.pt'.format(path_name, model_name, dataset_name), map_location=device))
+        lamda_str = str(lamda_param).replace('.', '_')
+        model.load_state_dict(torch.load('{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str), map_location=device))
         model.eval()       
 
-        scale_fairness = 0.01 ## Scale parameter
+        scale_fairness = SCALE_PARAM  ## Scale parameter (should match training scale)
 
         cindex_all, brier_all, mean_auc_all, F_ind_all, F_cen_ind_all, F_cen_group_all, F_group_prot_1_all, F_group_prot_2_all =  FIPNAM_Evaluation(model, data_X_test, data_X_test_uncen,  data_X_test_cen, data_time_train, data_time_train_uncen, data_time_train_cen, data_time_test, data_time_test_cen,  data_time_test_uncen, data_event_train, data_event_test, data_event_test_uncen, data_event_test_cen, np.array(test_data['protected_group1']).astype(int), np.array(test_data['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name) ## Compute the accuracy and fairness measures
 
@@ -242,9 +265,10 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     
     # Create DataFrame and save to CSV
     df_results = pd.DataFrame(results_dict)
-    csv_path = '{}/Results/Results_{}_{}.csv'.format(path_name, model_name, dataset_name)
+    lamda_str = str(lamda_param).replace('.', '_')
+    csv_path = '{}/Results/Results_{}_{}_lambda_{}.csv'.format(path_name, model_name, dataset_identifier, lamda_str)
     df_results.to_csv(csv_path, index=False)
-    print('Your result is ready!!!')
+    print(f'Your result is ready!!! Saved to: {csv_path}')
     
     return
 
@@ -275,6 +299,7 @@ def main(args):
     batch_size         = args.batch_size
     lr                 = args.lr
     epochs             = args.epochs
+    lamda_param        = args.lamda 
 
     
     ## Run the experiments
@@ -284,7 +309,8 @@ def main(args):
         dataset_name,
         batch_size, 
         lr, 
-        epochs)  
+        epochs,
+        lamda_param)  
 
 
 if __name__ == '__main__':
@@ -296,7 +322,8 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--dataset-name", default="SUPPORT", type=str)
     parser.add_argument("-b", "--batch-size", default=64, type=int)
     parser.add_argument("-lr", "--lr", default=0.01, type=float)    
-    parser.add_argument("-e", "--epochs", default=100, type=int)  
+    parser.add_argument("-e", "--epochs", default=100, type=int)
+    parser.add_argument("-l", "--lamda", default=0.01, type=float)  
     
     args = parser.parse_args()
 

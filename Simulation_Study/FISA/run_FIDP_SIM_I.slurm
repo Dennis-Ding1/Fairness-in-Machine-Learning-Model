@@ -1,10 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=FIDP_SIM_I
-#SBATCH --output=outputs/FIDP_SIM_I_%j.out
-#SBATCH --error=outputs/FIDP_SIM_I_%j.err
+#SBATCH --output=outputs/FIDP_SIM_I_%A_%a.out
+#SBATCH --error=outputs/FIDP_SIM_I_%A_%a.err
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
+#SBATCH --array=0-2
+
+LAMBDA_VALUES=(0 0.01 0.02)
+
+LAMBDA=${LAMBDA_VALUES[$SLURM_ARRAY_TASK_ID]}
 
 module load python/3.11
 module load arrow/21.0.0
@@ -23,4 +28,5 @@ python Experiment.py \
   -d "SIMULATED" \
   -b 128 \
   -lr 0.01 \
-  -e 20
+  -e 20 \
+  -l $LAMBDA
