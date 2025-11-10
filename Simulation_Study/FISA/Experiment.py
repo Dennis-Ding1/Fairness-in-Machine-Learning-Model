@@ -5,8 +5,6 @@ import torch
 import os
 import pandas as pd
 import numpy as np
-import xlwt
-from xlwt import Workbook
 from model import *
 from fairness_measure import *
 from utils import *
@@ -216,50 +214,36 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         
 
 # ==============================================================================
-#                             Save the results in an Excel workbook
+#                             Save the results in CSV format
 # ==============================================================================                
         
         
-    # Workbook is created
-    wb = Workbook()
-    # add_sheet is used to create sheet.
-    sheet1 = wb.add_sheet('Sheet 1')
-    sheet1.write(1, 0, dataset_name)
-    sheet1.write(1, 1, cindex_all)
-    sheet1.write(1, 2, brier_all)
-    sheet1.write(1, 3, mean_auc_all)
-    sheet1.write(1, 4, F_ind_all)
-    sheet1.write(1, 5, F_cen_ind_all)
-    sheet1.write(1, 6, F_cen_group_all)
-    sheet1.write(1, 7, F_group_prot_1_all)
-    sheet1.write(1, 8, F_group_prot_2_all)
-    for m, group in enumerate(protected_group):
-        sheet1.write(1, (m*6+8+1), cindex[group])
-        sheet1.write(1, (m*6+8+2), brier[group])
-        sheet1.write(1, (m*6+8+3), mean_auc[group])
-        sheet1.write(1, (m*6+8+4), F_ind[group])
-        sheet1.write(1, (m*6+8+5), F_cen_ind[group])
-        sheet1.write(1, (m*6+8+6), F_cen_group[group])
-                       
-    sheet1.write(0, 0, 'Dataset')    
-    sheet1.write(0, 1, 'Cindex')
-    sheet1.write(0, 2, 'Brier')
-    sheet1.write(0, 3, 'AUC')
-    sheet1.write(0, 4, 'F_I')
-    sheet1.write(0, 5, 'F_CI')
-    sheet1.write(0, 6, 'F_CG')
-    sheet1.write(0, 7, 'F_G_Prot_1')
-    sheet1.write(0, 8, 'F_G_Prot_2')
-    for m, group in enumerate(protected_group):  
-        sheet1.write(0, (m*6+8+1), 'Cindex')
-        sheet1.write(0, (m*6+8+2), 'Brier')
-        sheet1.write(0, (m*6+8+3), 'AUC')
-        sheet1.write(0, (m*6+8+4), 'F_I')
-        sheet1.write(0, (m*6+8+5), 'F_CI')
-        sheet1.write(0, (m*6+8+6), 'F_CG')
-       
+    # Create a dictionary to store results
+    results_dict = {
+        'Dataset': [dataset_name],
+        'Cindex': [cindex_all],
+        'Brier': [brier_all],
+        'AUC': [mean_auc_all],
+        'F_I': [F_ind_all],
+        'F_CI': [F_cen_ind_all],
+        'F_CG': [F_cen_group_all],
+        'F_G_Prot_1': [F_group_prot_1_all],
+        'F_G_Prot_2': [F_group_prot_2_all]
+    }
     
-    wb.save('{}/Results/Results_{}_{}.xls'.format(path_name, model_name, dataset_name))
+    # Add protected group results
+    for m, group in enumerate(protected_group):
+        results_dict[f'{group}_Cindex'] = [cindex[group]]
+        results_dict[f'{group}_Brier'] = [brier[group]]
+        results_dict[f'{group}_AUC'] = [mean_auc[group]]
+        results_dict[f'{group}_F_I'] = [F_ind[group]]
+        results_dict[f'{group}_F_CI'] = [F_cen_ind[group]]
+        results_dict[f'{group}_F_CG'] = [F_cen_group[group]]
+    
+    # Create DataFrame and save to CSV
+    df_results = pd.DataFrame(results_dict)
+    csv_path = '{}/Results/Results_{}_{}.csv'.format(path_name, model_name, dataset_name)
+    df_results.to_csv(csv_path, index=False)
     print('Your result is ready!!!')
     
     return
