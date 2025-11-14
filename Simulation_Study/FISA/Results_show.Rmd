@@ -1,0 +1,109 @@
+---
+title: "Results_show"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+```
+
+```{r}
+files <- list.files("Results/", pattern = "*.csv", full.names = TRUE)
+
+results_all <- files %>%
+  set_names() %>%
+  map_df(~ read.csv(.x) %>% mutate(file = basename(.x)), .id = "source")
+
+results_all <- results_all %>%
+  mutate(
+    Model = str_extract(file, "(FIDP|FIPNAM)"),
+    Data = str_extract(file, "(SIMULATED_II|SIMULATED_I|FLChain)"),
+    Lambda = str_extract(file, "lambda_[0-9_]+") %>%
+               str_remove("lambda_") %>%
+               str_replace("_", ".") %>% 
+               as.numeric()
+  )
+
+
+```
+
+```{r}
+table_score <- results_all %>%
+  select(Model, Data, Lambda,
+         Cindex, Brier, AUC,
+         F_I, F_CI) %>%
+  arrange(Model, Data, Lambda)
+
+table_score %>%
+  kbl(digits = 4, caption = "Performance and Fairness Metrics") %>%
+  kable_classic(full_width = FALSE)
+
+table_score_latex <- table_score %>%
+  kbl(format = "latex", booktabs = TRUE) %>%
+  kable_styling()
+
+writeLines(table_score_latex, "table_score.tex")
+```
+
+```{r}
+table_group <- results_all %>%
+  select(Model, Data, Lambda,
+         F_CG, F_G_Prot_1, F_G_Prot_2) %>%
+  arrange(Model, Data, Lambda)
+
+table_group %>%
+  kbl(digits = 4, caption = "Group-level Fairness Metrics") %>%
+  kable_classic(full_width = FALSE)
+
+table_group_latex <- table_group %>%
+  kbl(format = "latex", booktabs = TRUE) %>%
+  kable_styling()
+
+writeLines(table_group_latex, "table_group.tex")
+
+```
+
+```{r}
+fair_cols <- c("F_I", "F_CI", "F_CG",
+               "F_G_Prot_1", "F_G_Prot_2")
+
+results_fair_long <- results_all %>%
+  pivot_longer(cols = all_of(fair_cols),
+               names_to = "Metric",
+               values_to = "Value")
+
+p <- ggplot(results_fair_long,
+       aes(x = Lambda, y = Value, color = Metric)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  facet_grid(Model ~ Data, scales = "free_y") +
+  theme_bw(base_size = 14) +
+  labs(title = "Fairness Metrics Across Lambda",
+       x = "Lambda",
+       y = "Metric Value")
+
+p
+ggsave("Fairness.png", p, width = 12, height = 8, dpi = 300)
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
