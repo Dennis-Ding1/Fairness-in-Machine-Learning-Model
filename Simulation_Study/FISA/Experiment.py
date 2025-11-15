@@ -7,6 +7,8 @@ import random
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
+from sksurv.util import Surv
 from model import *
 from fairness_measure import *
 from utils import *
@@ -48,7 +50,6 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     # data_I.csv -> SIMULATED_I, data_II.csv -> SIMULATED_II
     dataset_identifier = dataset_name
     if dataset_name == 'SIMULATED':
-        import os
         basename = os.path.basename(fn_csv)
         if 'data_II' in basename:
             dataset_identifier = 'SIMULATED_II'
@@ -108,12 +109,22 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
               num_output=len(eval_time)
             )
         model = model.to(device)
+    elif model_name=='Cox':
+        # Cox model doesn't need device or features setup
+        model = CoxModel(alpha=0.1)
+    else:
+        raise ValueError(f"Unknown model name: {model_name}. Supported models: FIDP, FIPNAM, Cox")
       
-    loss_fn = pseudo_loss #Pseudo value based loss function
-    learning_rate=lr
-
-    optimizer = torch.optim.AdamW(model.parameters(),lr=learning_rate)  
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+    # Only set up optimizer and loss for neural network models
+    if model_name in ['FIDP', 'FIPNAM']:
+        loss_fn = pseudo_loss #Pseudo value based loss function
+        learning_rate=lr
+        optimizer = torch.optim.AdamW(model.parameters(),lr=learning_rate)  
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+    else:
+        loss_fn = None
+        optimizer = None
+        scheduler = None
 
     Epochs = epochs
     patience=5
@@ -121,12 +132,15 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     
     # Fairness parameters - unified for training and evaluation
     SCALE_PARAM = 0.01  ## Scale parameter for Lipschitz constraint (used in individual fairness, censoring-based individual fairness, and censoring-based group fairness)
-    LAMDA_PARAM = lamda_param   ## Trade-off parameter between accuracy and fairness
     
-    print(f"Fairness parameters - Scale: {SCALE_PARAM} (FIXED), Lambda: {LAMDA_PARAM}")
-    
-    scale=torch.tensor(SCALE_PARAM).to(device) ## Scale parameter (used in training)
-    lamda=torch.tensor(LAMDA_PARAM).to(device)  ## Trade-off parameter between accuracy and fairness 
+    # Only set lambda and scale tensors for neural network models
+    if model_name in ['FIDP', 'FIPNAM']:
+        LAMDA_PARAM = lamda_param   ## Trade-off parameter between accuracy and fairness
+        print(f"Fairness parameters - Scale: {SCALE_PARAM} (FIXED), Lambda: {LAMDA_PARAM}")
+        scale=torch.tensor(SCALE_PARAM).to(device) ## Scale parameter (used in training)
+        lamda=torch.tensor(LAMDA_PARAM).to(device)  ## Trade-off parameter between accuracy and fairness 
+    else:
+        print(f"Fairness parameters - Scale: {SCALE_PARAM} (FIXED, used for evaluation only)")
 
     # Initialize loss lists for plotting
     train_losses = []
@@ -250,6 +264,92 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         F_g_prot_2={}
         for group in protected_group:
             cindex[group], brier[group], mean_auc[group], F_ind[group], F_cen_ind[group], F_cen_group[group], F_g_prot_1[group], F_g_prot_2[group] =  FIPNAM_Evaluation(model, protected_X_test[group], protected_X_test_uncen[group],  protected_X_test_cen[group], data_time_train, protected_time_train_uncen[group], protected_time_train_cen[group], protected_time_test[group], protected_time_test_cen[group],  protected_time_test_uncen[group], data_event_train, protected_event_test[group], protected_event_test_uncen[group], protected_event_test_cen[group], np.array(test_data[test_data[group]==1]['protected_group1']).astype(int), np.array(test_data[test_data[group]==1]['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name) ## Compute the accuracy and fairness measures for protected groups
+        
+
+# ==============================================================================
+#                             Training Cox model
+# ==============================================================================             
+            
+    elif model_name=='Cox':
+        print("Training Cox model...")
+        
+        # Prepare survival data in sksurv format
+        y_train = Surv.from_arrays(event=data_event_train.astype(bool), time=data_time_train)
+        y_val = Surv.from_arrays(event=data_event_val.astype(bool), time=data_time_val)
+        
+        # Fit the Cox model
+        print("Fitting Cox model on training data...")
+        train_loss = Cox_train(data_X_train, y_train, model)
+        train_losses.append(train_loss)
+        print("Cox model fitted successfully!")
+        
+        # Evaluate on validation set (for compatibility, though Cox doesn't use the same loss)
+        val_loss = Cox_evaluate(data_X_val, y_val, model)
+        val_losses.append(val_loss)
+        
+        # Compute validation C-index
+        metrics = Cox_Concordance(model, data_X_val, np.array(data_time_val), np.array(data_event_val), eval_time)
+        print('Validation C-index:', metrics)
+        
+        # Save the model
+        model_path = '{}/Trained_models/model_{}_{}.pkl'.format(path_name, model_name, dataset_identifier)
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        with open(model_path, 'wb') as f:
+            pickle.dump(model.state_dict(), f)
+        print(f"Model saved to: {model_path}")
+        
+        print("Done!")
+        
+        ## Evaluation
+        # Load model (for consistency, though we just saved it)
+        model_path = '{}/Trained_models/model_{}_{}.pkl'.format(path_name, model_name, dataset_identifier)
+        with open(model_path, 'rb') as f:
+            model_state = pickle.load(f)
+        model.load_state_dict(model_state)
+        model.eval()
+        
+        scale_fairness = SCALE_PARAM  ## Scale parameter (should match training scale)
+        
+        # Convert test data to proper format for Cox evaluation
+        # Ensure data_X_test_uncen and data_X_test_cen are numpy arrays or DataFrames
+        if isinstance(data_X_test_uncen, pd.DataFrame):
+            X_test_uncen_array = data_X_test_uncen.values
+        else:
+            X_test_uncen_array = data_X_test_uncen
+            
+        if isinstance(data_X_test_cen, pd.DataFrame):
+            X_test_cen_array = data_X_test_cen.values
+        else:
+            X_test_cen_array = data_X_test_cen
+
+        cindex_all, brier_all, mean_auc_all, F_ind_all, F_cen_ind_all, F_cen_group_all, F_group_prot_1_all, F_group_prot_2_all = Cox_Evaluation(model, data_X_test, X_test_uncen_array, X_test_cen_array, data_time_train, data_time_train_uncen, data_time_train_cen, data_time_test, data_time_test_cen, data_time_test_uncen, data_event_train, data_event_test, data_event_test_uncen, data_event_test_cen, np.array(test_data['protected_group1']).astype(int), np.array(test_data['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name)  ## Compute the accuracy and fairness measures
+
+        cindex={}
+        brier={}
+        mean_auc={}
+        F_ind={}
+        F_cen_ind={}
+        F_cen_group={}
+        F_g_prot_1={}
+        F_g_prot_2={}
+        for group in protected_group:
+            # Convert protected group data to proper format
+            if isinstance(protected_X_test[group], pd.DataFrame):
+                prot_X_test = protected_X_test[group].values
+            else:
+                prot_X_test = protected_X_test[group]
+                
+            if isinstance(protected_X_test_uncen[group], pd.DataFrame):
+                prot_X_test_uncen = protected_X_test_uncen[group].values
+            else:
+                prot_X_test_uncen = protected_X_test_uncen[group]
+                
+            if isinstance(protected_X_test_cen[group], pd.DataFrame):
+                prot_X_test_cen = protected_X_test_cen[group].values
+            else:
+                prot_X_test_cen = protected_X_test_cen[group]
+            
+            cindex[group], brier[group], mean_auc[group], F_ind[group], F_cen_ind[group], F_cen_group[group], F_g_prot_1[group], F_g_prot_2[group] = Cox_Evaluation(model, prot_X_test, prot_X_test_uncen, prot_X_test_cen, data_time_train, protected_time_train_uncen[group], protected_time_train_cen[group], protected_time_test[group], protected_time_test_cen[group], protected_time_test_uncen[group], data_event_train, protected_event_test[group], protected_event_test_uncen[group], protected_event_test_cen[group], np.array(test_data[test_data[group]==1]['protected_group1']).astype(int), np.array(test_data[test_data[group]==1]['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name) ## Compute the accuracy and fairness measures for protected groups
         
 
 # ==============================================================================

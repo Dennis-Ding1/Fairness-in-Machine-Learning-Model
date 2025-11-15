@@ -271,6 +271,141 @@ def FIPNAM_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_t
 
 
 # ==================================================================================
+#                             Compute accuracy and fairnes measure using Cox model 
+# ================================================================================== 
+
+def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_train, train_time_uncen, train_time_cen, data_time_test, test_time_cen, test_time_uncen, data_event_train, data_event_test, test_event_uncen, test_event_cen, S_protected_attribute_1, S_protected_attribute_2, eval_time, scale_fairness, dataset_name):
+    
+    """
+    Compute accuracy and fairnes measures using Cox model 
+    Arguments:
+    model -- Cox model
+    data_X_test--Covariates in test data
+    X_test_uncen--Covariates in uncensored test data
+    X_test_cen--Covariates in censored test data
+    data_time_train--Observed time in train data
+    train_time_uncen--Observed time in uncensored train data
+    train_time_cen--Observed time in censored train data
+    data_time_test---Observed time in test data
+    test_time_cen--Observed time in censored test data
+    test_time_uncen--Observed time in uncensored test data
+    data_event_train--Event status in train data
+    data_event_test--Event status in test data
+    test_event_uncen--Event status in uncensored test data
+    test_event_cen--Event status in censored test data
+    S_protected_attribute_1--Protected attribute 1 (e.g. age)
+    S_protected_attribute_2--Protected attribute 2 (e.g. gender/race)
+    eval_time--Pre-specified evaluation time points
+    scale_fairness--scale parameter
+    dataset_name--Name of the dataset (e.g., SEER/SUPPORT/FLChain)
+    Returns:
+    Accuracy and fairnes measures
+    """     
+    
+    # Convert inputs to numpy arrays if they are DataFrames
+    if isinstance(data_X_test, pd.DataFrame):
+        data_X_test = data_X_test.values
+    if isinstance(X_test_uncen, pd.DataFrame):
+        X_test_uncen = X_test_uncen.values
+    if isinstance(X_test_cen, pd.DataFrame):
+        X_test_cen = X_test_cen.values
+    
+    # Predict survival functions for test data
+    surv_funcs_test = model.predict_survival_function(data_X_test, return_array=False)
+    
+    # Extract survival probabilities at eval_time points
+    sp_test = np.zeros((len(data_X_test), len(eval_time)))
+    for i, surv_func in enumerate(surv_funcs_test):
+        for j, t in enumerate(eval_time):
+            # Get survival probability at time t
+            # surv_func is a function that takes time and returns survival probability
+            sp_test[i, j] = surv_func(t)
+    
+    cif_test = 1 - sp_test
+    
+    # Predict for uncensored test data
+    if len(X_test_uncen) > 0:
+        surv_funcs_test_uncen = model.predict_survival_function(X_test_uncen, return_array=False)
+        sp_test_uncen = np.zeros((len(X_test_uncen), len(eval_time)))
+        for i, surv_func in enumerate(surv_funcs_test_uncen):
+            for j, t in enumerate(eval_time):
+                sp_test_uncen[i, j] = surv_func(t)
+        cif_test_uncen = 1 - sp_test_uncen
+    else:
+        sp_test_uncen = np.zeros((0, len(eval_time)))
+        cif_test_uncen = np.zeros((0, len(eval_time)))
+    
+    # Predict for censored test data
+    if len(X_test_cen) > 0:
+        surv_funcs_test_cen = model.predict_survival_function(X_test_cen, return_array=False)
+        sp_test_cen = np.zeros((len(X_test_cen), len(eval_time)))
+        for i, surv_func in enumerate(surv_funcs_test_cen):
+            for j, t in enumerate(eval_time):
+                sp_test_cen[i, j] = surv_func(t)
+        cif_test_cen = 1 - sp_test_cen
+    else:
+        sp_test_cen = np.zeros((0, len(eval_time)))
+        cif_test_cen = np.zeros((0, len(eval_time)))
+    
+    data_event_train = data_event_train.astype(bool)
+    data_event_test = data_event_test.astype(bool)
+    data_time_train = data_time_train
+
+# ==================================================================================
+#                             Compute Accuracy measures
+# ==================================================================================       
+    survival_train=np.dtype([('event',data_event_train.dtype),('surv_time',data_time_train.dtype)])
+    survival_train=np.empty(len(data_event_train),dtype=survival_train)
+    survival_train['event']=data_event_train
+    survival_train['surv_time']=data_time_train
+
+    survival_test=np.dtype([('event',data_event_test.dtype),('surv_time',data_time_test.dtype)])
+    survival_test=np.empty(len(data_event_test),dtype=survival_test)
+    survival_test['event']=data_event_test
+    survival_test['surv_time']=data_time_test
+
+    auc,mean_auc=cumulative_dynamic_auc(survival_train, survival_test, cif_test, eval_time) ## Time-dependent Area under the ROC
+    surv=pd.DataFrame(np.transpose(sp_test))  
+    surv=surv.set_index([eval_time])         
+    ev = EvalSurv(surv, np.array(data_time_test), np.array(data_event_test), censor_surv='km')
+    cindex=ev.concordance_td() ## time-dependent cindex
+    brier=ev.integrated_brier_score(eval_time) ## integrated brier score
+
+# ==================================================================================
+#                             Compute fairnes measures
+# ================================================================================== 
+
+    ## individual fairness measures
+    F_ind = individual_fairness(sp_test,data_X_test,len(eval_time), scale_fairness)
+    ## Censoring individual fairness measures    
+    if len(X_test_uncen) > 0 and len(X_test_cen) > 0:
+        F_cen_ind= censoring_individual_fairness(sp_test_uncen, sp_test_cen, X_test_uncen, X_test_cen, test_time_uncen, test_time_cen, len(eval_time),scale_fairness)
+    else:
+        F_cen_ind = 0.0
+    
+    ## Cesnoring Group fairness measures  
+    if X_test_cen.shape[0]==0:
+        F_cen_group=0.0
+    else:
+        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_test_uncen, X_test_cen, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name) 
+        
+    ## Group fairness measures     
+    if len(np.unique(S_protected_attribute_1))==1:
+        F_group_protected_attribute_1 = 0.0
+    else:    
+        #%% group fairness measures - protected attribute 1
+        F_group_protected_attribute_1 = group_fairness(sp_test, S_protected_attribute_1, len(eval_time))
+
+    if len(np.unique(S_protected_attribute_2))==1:
+        F_group_protected_attribute_2 = 0.0
+    else:    
+        #%% group fairness measures - protected attribute 2
+        F_group_protected_attribute_2 = group_fairness(sp_test, S_protected_attribute_2, len(eval_time))        
+
+    return cindex, brier, mean_auc, F_ind, F_cen_ind, F_cen_group, F_group_protected_attribute_1, F_group_protected_attribute_2 
+
+
+# ==================================================================================
 #                             Concordance Index metric 
 # ================================================================================== 
 
@@ -318,6 +453,37 @@ def PNAM_Concordance(model,x,durations,events, evaltime):
     y_pred = pd.DataFrame(np.transpose(surv.cpu().detach().numpy()))
     y_pred = y_pred.set_index([evaltime])
     ev     = EvalSurv(y_pred, durations, events)
+    cindex = ev.concordance_td()
+    return cindex
+
+def Cox_Concordance(model, x, durations, events, evaltime):
+    """
+    Compute the time-dependent concordance index
+    Arguments:
+    model -- Cox model
+    x -- Covariates (numpy array)
+    durations--Observed times
+    events--Event status
+    evaltime--Pre-specified evaluation time points
+    Returns:
+    Time-dependent concordance index
+    """     
+    # Convert x to numpy if it's a tensor
+    if isinstance(x, torch.Tensor):
+        x = x.cpu().numpy()
+    
+    # Predict survival functions
+    surv_funcs = model.predict_survival_function(x, return_array=False)
+    
+    # Extract survival probabilities at evaltime points
+    surv = np.zeros((len(x), len(evaltime)))
+    for i, surv_func in enumerate(surv_funcs):
+        for j, t in enumerate(evaltime):
+            surv[i, j] = surv_func(t)
+    
+    y_pred = pd.DataFrame(np.transpose(surv))
+    y_pred = y_pred.set_index([evaltime])
+    ev = EvalSurv(y_pred, durations, events)
     cindex = ev.concordance_td()
     return cindex
 

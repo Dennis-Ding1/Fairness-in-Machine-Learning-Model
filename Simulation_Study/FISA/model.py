@@ -8,6 +8,7 @@ from typing import Tuple
 from types import SimpleNamespace
 from typing import List
 import numpy as np
+from sksurv.linear_model import CoxPHSurvivalAnalysis
 
 # =============================================================================
 #                             FIDP Model (A deep feed-forward neural network)
@@ -346,4 +347,76 @@ class FIPNAM(Model):
         out = self.linear(dropout_out)
         return torch.sigmoid(out), dropout_out
     
+
+# =======================================================================================
+#                             Cox Proportional Hazards Model
+# =======================================================================================
+
+class CoxModel:
+    """
+    Wrapper class for Cox Proportional Hazards model using scikit-survival.
+    This is a baseline model for comparison with FIDP and FIPNAM.
+    """
+    def __init__(self, alpha=0.1):
+        """
+        Initialize Cox model.
+        Arguments:
+            alpha: Regularization strength (L2 penalty). Default 0.1.
+        """
+        self.model = CoxPHSurvivalAnalysis(alpha=alpha)
+        self.is_fitted = False
+        
+    def fit(self, X, y):
+        """
+        Fit the Cox model.
+        Arguments:
+            X: Covariates (numpy array or pandas DataFrame)
+            y: Structured array with survival data (from sksurv.util)
+        """
+        self.model.fit(X, y)
+        self.is_fitted = True
+        
+    def predict_survival_function(self, X, return_array=False):
+        """
+        Predict survival function.
+        Arguments:
+            X: Covariates
+            return_array: If True, return as numpy array; if False, return as DataFrame
+        Returns:
+            Survival function predictions
+        """
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        return self.model.predict_survival_function(X, return_array=return_array)
+    
+    def predict_partial_hazard(self, X):
+        """
+        Predict partial hazard (risk score).
+        Arguments:
+            X: Covariates
+        Returns:
+            Partial hazard predictions
+        """
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        return self.model.predict(X)
+    
+    def state_dict(self):
+        """Return model state for saving (compatibility with PyTorch models)."""
+        # For Cox model, we don't have state_dict in the same way
+        # Return a dictionary with the fitted model
+        return {'model': self.model, 'is_fitted': self.is_fitted}
+    
+    def load_state_dict(self, state_dict):
+        """Load model state (compatibility with PyTorch models)."""
+        self.model = state_dict['model']
+        self.is_fitted = state_dict['is_fitted']
+    
+    def eval(self):
+        """Set model to evaluation mode (compatibility with PyTorch models)."""
+        pass  # Cox model doesn't have train/eval modes
+    
+    def train(self):
+        """Set model to training mode (compatibility with PyTorch models)."""
+        pass  # Cox model doesn't have train/eval modes
 
