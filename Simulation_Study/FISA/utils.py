@@ -318,8 +318,19 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     if isinstance(data_X_test, pd.DataFrame):
         data_X_test = data_X_test.values
     # For X_test_uncen and X_test_cen, convert to numpy only for prediction, keep original for fairness
-    X_test_uncen_for_pred = X_test_uncen.values if isinstance(X_test_uncen, pd.DataFrame) else X_test_uncen
-    X_test_cen_for_pred = X_test_cen.values if isinstance(X_test_cen, pd.DataFrame) else X_test_cen
+    # Save column names before conversion for potential reconstruction
+    X_test_uncen_columns = None
+    X_test_cen_columns = None
+    if isinstance(X_test_uncen, pd.DataFrame):
+        X_test_uncen_columns = X_test_uncen.columns.tolist()
+        X_test_uncen_for_pred = X_test_uncen.values
+    else:
+        X_test_uncen_for_pred = X_test_uncen
+    if isinstance(X_test_cen, pd.DataFrame):
+        X_test_cen_columns = X_test_cen.columns.tolist()
+        X_test_cen_for_pred = X_test_cen.values
+    else:
+        X_test_cen_for_pred = X_test_cen
     
     # Predict survival functions for test data
     surv_funcs_test = model.predict_survival_function(data_X_test, return_array=False)
@@ -398,8 +409,34 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     if len(X_test_cen_for_pred)==0:
         F_cen_group=0.0
     else:
-        # Pass original DataFrames directly (consistent with FIDP and FIPNAM)
-        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_test_uncen, X_test_cen, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name)
+        # Ensure X_test_uncen and X_test_cen are DataFrames with proper column names
+        # This is critical for FLChain and other datasets where column names are needed
+        X_test_uncen_for_fairness = X_test_uncen
+        X_test_cen_for_fairness = X_test_cen
+        
+        # If they're numpy arrays, try to reconstruct with column names
+        if not isinstance(X_test_uncen_for_fairness, pd.DataFrame):
+            if X_test_uncen_columns is not None and len(X_test_uncen_columns) == X_test_uncen_for_fairness.shape[1]:
+                X_test_uncen_for_fairness = pd.DataFrame(X_test_uncen_for_fairness, columns=X_test_uncen_columns)
+            else:
+                # If no column names available, create DataFrame (will have numeric columns)
+                X_test_uncen_for_fairness = pd.DataFrame(X_test_uncen_for_fairness)
+        elif isinstance(X_test_uncen_for_fairness.columns, pd.RangeIndex) or all(isinstance(col, (int, np.integer)) for col in X_test_uncen_for_fairness.columns):
+            # DataFrame exists but has numeric column names - try to restore from saved columns
+            if X_test_uncen_columns is not None and len(X_test_uncen_columns) == X_test_uncen_for_fairness.shape[1]:
+                X_test_uncen_for_fairness.columns = X_test_uncen_columns
+        
+        if not isinstance(X_test_cen_for_fairness, pd.DataFrame):
+            if X_test_cen_columns is not None and len(X_test_cen_columns) == X_test_cen_for_fairness.shape[1]:
+                X_test_cen_for_fairness = pd.DataFrame(X_test_cen_for_fairness, columns=X_test_cen_columns)
+            else:
+                X_test_cen_for_fairness = pd.DataFrame(X_test_cen_for_fairness)
+        elif isinstance(X_test_cen_for_fairness.columns, pd.RangeIndex) or all(isinstance(col, (int, np.integer)) for col in X_test_cen_for_fairness.columns):
+            if X_test_cen_columns is not None and len(X_test_cen_columns) == X_test_cen_for_fairness.shape[1]:
+                X_test_cen_for_fairness.columns = X_test_cen_columns
+        
+        # Pass DataFrames with proper column names to fairness function
+        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_test_uncen_for_fairness, X_test_cen_for_fairness, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name)
         
     ## Group fairness measures     
     if len(np.unique(S_protected_attribute_1))==1:

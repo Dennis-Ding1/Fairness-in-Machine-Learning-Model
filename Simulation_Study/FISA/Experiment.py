@@ -330,18 +330,22 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         F_g_prot_2={}
         for group in protected_group:
             # Convert protected group data to proper format
+            # For Cox model, we need to preserve DataFrame structure for fairness measures
+            # (especially for FLChain dataset where column names are critical)
             if isinstance(protected_X_test[group], pd.DataFrame):
                 prot_X_test = protected_X_test[group].values
             else:
                 prot_X_test = protected_X_test[group]
                 
+            # Preserve DataFrame structure for X_test_uncen and X_test_cen to maintain column names
+            # This is critical for censoring_group_fairness which needs column names like 'sex_1', 'sex_0'
             if isinstance(protected_X_test_uncen[group], pd.DataFrame):
-                prot_X_test_uncen = protected_X_test_uncen[group].values
+                prot_X_test_uncen = protected_X_test_uncen[group]  # Keep as DataFrame
             else:
                 prot_X_test_uncen = protected_X_test_uncen[group]
                 
             if isinstance(protected_X_test_cen[group], pd.DataFrame):
-                prot_X_test_cen = protected_X_test_cen[group].values
+                prot_X_test_cen = protected_X_test_cen[group]  # Keep as DataFrame
             else:
                 prot_X_test_cen = protected_X_test_cen[group]
             
