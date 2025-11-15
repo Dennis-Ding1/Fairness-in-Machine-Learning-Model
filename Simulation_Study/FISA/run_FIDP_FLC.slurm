@@ -11,7 +11,6 @@ LAMBDA_VALUES=(0 0.01 0.02)
 
 LAMBDA=${LAMBDA_VALUES[$SLURM_ARRAY_TASK_ID]}
 
-module purge
 module load StdEnv/2023
 module load python/3.11
 module load arrow/21.0.0

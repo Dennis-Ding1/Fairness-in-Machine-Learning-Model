@@ -47,6 +47,10 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     # Configure logging to output to console
     logging.basicConfig(level=logging.INFO, format='%(message)s', force=True)
     
+    # Re-import os in function scope to avoid issues with import * potentially shadowing it
+    # This ensures os module is available even if import * from other modules overwrote it
+    import os
+    
     # data_I.csv -> SIMULATED_I, data_II.csv -> SIMULATED_II
     dataset_identifier = dataset_name
     if dataset_name == 'SIMULATED':
@@ -174,7 +178,9 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
 
                 # Format lambda for filename (replace . with _)
                 lamda_str = str(lamda_param).replace('.', '_')
-                torch.save(model.state_dict(), '{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str))
+                model_path = '{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str)
+                os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                torch.save(model.state_dict(), model_path)
             else:
                 es += 1
                 print("Counter {} of {}".format(es,patience))
@@ -232,7 +238,9 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
 
                 # Format lambda for filename (replace . with _)
                 lamda_str = str(lamda_param).replace('.', '_')
-                torch.save(model.state_dict(), '{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str))
+                model_path = '{}/Trained_models/model_{}_{}_lambda_{}.pt'.format(path_name, model_name, dataset_identifier, lamda_str)
+                os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                torch.save(model.state_dict(), model_path)
             else:
                 es += 1
                 print("Counter {} of {}".format(es,patience))
@@ -385,27 +393,31 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     print(f'Your result is ready!!! Saved to: {csv_path}')
     
     # Plot training and validation loss curves
-    if train_losses and val_losses and len(train_losses) == len(val_losses) and len(train_losses) > 0:
-        plt.figure(figsize=(10, 6))
-        epochs_range = range(1, len(train_losses) + 1)
-        plt.plot(epochs_range, train_losses, 'b-', label='Train Loss', linewidth=2)
-        plt.plot(epochs_range, val_losses, 'r-', label='Validation Loss', linewidth=2)
-        plt.xlabel('Epoch', fontsize=12)
-        plt.ylabel('Loss', fontsize=12)
-        # Title based on model type (Cox doesn't have lambda)
-        if model_name == 'Cox':
-            plt.title(f'Training and Validation Loss - {model_name} on {dataset_identifier}', fontsize=14)
-        else:
+    # Only plot loss for neural network models (FIDP, FIPNAM), not for Cox
+    # Cox model doesn't use the same loss function and returns 0.0, so plotting is not meaningful
+    if model_name != 'Cox' and train_losses and val_losses and len(train_losses) == len(val_losses) and len(train_losses) > 0:
+        # Check if losses are meaningful (not all zeros)
+        if any(loss != 0.0 for loss in train_losses) or any(loss != 0.0 for loss in val_losses):
+            plt.figure(figsize=(10, 6))
+            epochs_range = range(1, len(train_losses) + 1)
+            plt.plot(epochs_range, train_losses, 'b-', label='Train Loss', linewidth=2)
+            plt.plot(epochs_range, val_losses, 'r-', label='Validation Loss', linewidth=2)
+            plt.xlabel('Epoch', fontsize=12)
+            plt.ylabel('Loss', fontsize=12)
             plt.title(f'Training and Validation Loss - {model_name} on {dataset_identifier} (λ={lamda_param})', fontsize=14)
-        plt.legend(fontsize=11)
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        
-        # Save plot with same name as CSV but with .png extension
-        plot_path = csv_path.replace('.csv', '.png')
-        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        print(f'Loss plot saved to: {plot_path}')
+            plt.legend(fontsize=11)
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            # Save plot with same name as CSV but with .png extension
+            plot_path = csv_path.replace('.csv', '.png')
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f'Loss plot saved to: {plot_path}')
+        else:
+            print('Skipping loss plot: All loss values are zero (not meaningful).')
+    elif model_name == 'Cox':
+        print('Skipping loss plot: Cox model does not use the same loss function as neural network models.')
     elif train_losses or val_losses:
         print('Warning: Loss lists have different lengths or are empty. Skipping plot generation.')
     
