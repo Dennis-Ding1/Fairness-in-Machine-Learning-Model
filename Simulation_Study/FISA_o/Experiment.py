@@ -263,6 +263,10 @@ if torch.cuda.is_available():
     except Exception as e:
         print(f"Warning: Could not set CUDA device: {e}. Continuing with default device.")
 
+import scipy.integrate
+if not hasattr(scipy.integrate, "simps"):
+    scipy.integrate.simps = scipy.integrate.simpson
+    
 def main(args):
 
     
