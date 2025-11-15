@@ -345,7 +345,13 @@ class FIPNAM(Model):
         dropout_out = self.dropout(conc_out)
 
         out = self.linear(dropout_out)
-        return torch.sigmoid(out), dropout_out
+        # Return raw output for training (like FIDP), sigmoid will be applied during evaluation
+        return out, dropout_out
+    
+    def forward_prob(self, inputs: torch.Tensor) -> torch.Tensor:
+        """Forward pass with sigmoid activation for probability outputs (used in evaluation)"""
+        out, _ = self.forward(inputs)
+        return torch.sigmoid(out)
     
 
 # =======================================================================================

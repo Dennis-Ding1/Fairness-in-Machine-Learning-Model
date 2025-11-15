@@ -309,20 +309,8 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         model.eval()
         
         scale_fairness = SCALE_PARAM  ## Scale parameter (should match training scale)
-        
-        # Convert test data to proper format for Cox evaluation
-        # Ensure data_X_test_uncen and data_X_test_cen are numpy arrays or DataFrames
-        if isinstance(data_X_test_uncen, pd.DataFrame):
-            X_test_uncen_array = data_X_test_uncen.values
-        else:
-            X_test_uncen_array = data_X_test_uncen
-            
-        if isinstance(data_X_test_cen, pd.DataFrame):
-            X_test_cen_array = data_X_test_cen.values
-        else:
-            X_test_cen_array = data_X_test_cen
 
-        cindex_all, brier_all, mean_auc_all, F_ind_all, F_cen_ind_all, F_cen_group_all, F_group_prot_1_all, F_group_prot_2_all = Cox_Evaluation(model, data_X_test, X_test_uncen_array, X_test_cen_array, data_time_train, data_time_train_uncen, data_time_train_cen, data_time_test, data_time_test_cen, data_time_test_uncen, data_event_train, data_event_test, data_event_test_uncen, data_event_test_cen, np.array(test_data['protected_group1']).astype(int), np.array(test_data['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name)  ## Compute the accuracy and fairness measures
+        cindex_all, brier_all, mean_auc_all, F_ind_all, F_cen_ind_all, F_cen_group_all, F_group_prot_1_all, F_group_prot_2_all = Cox_Evaluation(model, data_X_test, data_X_test_uncen, data_X_test_cen, data_time_train, data_time_train_uncen, data_time_train_cen, data_time_test, data_time_test_cen, data_time_test_uncen, data_event_train, data_event_test, data_event_test_uncen, data_event_test_cen, np.array(test_data['protected_group1']).astype(int), np.array(test_data['protected_group2']).astype(int), eval_time, scale_fairness, dataset_name)  ## Compute the accuracy and fairness measures
 
         cindex={}
         brier={}
@@ -381,13 +369,18 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     
     # Create DataFrame and save to CSV
     df_results = pd.DataFrame(results_dict)
-    lamda_str = str(lamda_param).replace('.', '_')
     
     # Ensure Results directory exists
     results_dir = '{}/Results'.format(path_name)
     os.makedirs(results_dir, exist_ok=True)
     
-    csv_path = '{}/Results/Results_{}_{}_lambda_{}.csv'.format(path_name, model_name, dataset_identifier, lamda_str)
+    # Build filename based on model type (Cox doesn't have lambda)
+    if model_name == 'Cox':
+        csv_path = '{}/Results/Results_{}_{}.csv'.format(path_name, model_name, dataset_identifier)
+    else:
+        lamda_str = str(lamda_param).replace('.', '_')
+        csv_path = '{}/Results/Results_{}_{}_lambda_{}.csv'.format(path_name, model_name, dataset_identifier, lamda_str)
+    
     df_results.to_csv(csv_path, index=False)
     print(f'Your result is ready!!! Saved to: {csv_path}')
     
@@ -399,7 +392,11 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         plt.plot(epochs_range, val_losses, 'r-', label='Validation Loss', linewidth=2)
         plt.xlabel('Epoch', fontsize=12)
         plt.ylabel('Loss', fontsize=12)
-        plt.title(f'Training and Validation Loss - {model_name} on {dataset_identifier} (λ={lamda_param})', fontsize=14)
+        # Title based on model type (Cox doesn't have lambda)
+        if model_name == 'Cox':
+            plt.title(f'Training and Validation Loss - {model_name} on {dataset_identifier}', fontsize=14)
+        else:
+            plt.title(f'Training and Validation Loss - {model_name} on {dataset_identifier} (λ={lamda_param})', fontsize=14)
         plt.legend(fontsize=11)
         plt.grid(True, alpha=0.3)
         plt.tight_layout()

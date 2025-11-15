@@ -202,16 +202,27 @@ def FIPNAM_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_t
     """        
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    sp_test,_ = model(torch.tensor(np.array(data_X_test, dtype='float32')).to(device)) ## Predict survival probabilities for test data
-    sp_test=sp_test.cpu().detach().numpy()
+    # Use forward_prob to get probabilities in [0,1] range for evaluation (like FIDP)
+    if hasattr(model, 'forward_prob'):
+        sp_test = model.forward_prob(torch.tensor(np.array(data_X_test, dtype='float32')).to(device)).cpu().detach().numpy()
+    else:
+        # Fallback: apply sigmoid if method doesn't exist
+        sp_test, _ = model(torch.tensor(np.array(data_X_test, dtype='float32')).to(device))
+        sp_test = torch.sigmoid(sp_test).cpu().detach().numpy()
     cif_test = 1-sp_test   
 
-    sp_test_uncen,_ = model(torch.tensor(np.array(X_test_uncen, dtype='float32')).to(device)) ## Predict survival probabilities for uncensored test data
-    sp_test_uncen=sp_test_uncen.cpu().detach().numpy()
+    if hasattr(model, 'forward_prob'):
+        sp_test_uncen = model.forward_prob(torch.tensor(np.array(X_test_uncen, dtype='float32')).to(device)).cpu().detach().numpy()
+    else:
+        sp_test_uncen, _ = model(torch.tensor(np.array(X_test_uncen, dtype='float32')).to(device))
+        sp_test_uncen = torch.sigmoid(sp_test_uncen).cpu().detach().numpy()
     cif_test_uncen = 1-sp_test_uncen    
     
-    sp_test_cen,_ = model(torch.tensor(np.array(X_test_cen, dtype='float32')).to(device)) ## Predict survival probabilities for censored test data
-    sp_test_cen=sp_test_cen.cpu().detach().numpy()
+    if hasattr(model, 'forward_prob'):
+        sp_test_cen = model.forward_prob(torch.tensor(np.array(X_test_cen, dtype='float32')).to(device)).cpu().detach().numpy()
+    else:
+        sp_test_cen, _ = model(torch.tensor(np.array(X_test_cen, dtype='float32')).to(device))
+        sp_test_cen = torch.sigmoid(sp_test_cen).cpu().detach().numpy()
     cif_test_cen = 1-sp_test_cen     
     
     data_event_train = data_event_train.astype(bool)
@@ -302,7 +313,11 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     Accuracy and fairnes measures
     """     
     
-    # Convert inputs to numpy arrays if they are DataFrames
+    # Save original DataFrame formats for fairness measures (need column names)
+    X_test_uncen_df = X_test_uncen.copy() if isinstance(X_test_uncen, pd.DataFrame) else None
+    X_test_cen_df = X_test_cen.copy() if isinstance(X_test_cen, pd.DataFrame) else None
+    
+    # Convert inputs to numpy arrays if they are DataFrames (for model prediction)
     if isinstance(data_X_test, pd.DataFrame):
         data_X_test = data_X_test.values
     if isinstance(X_test_uncen, pd.DataFrame):
@@ -387,7 +402,19 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     if X_test_cen.shape[0]==0:
         F_cen_group=0.0
     else:
-        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_test_uncen, X_test_cen, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name) 
+        # Use DataFrame format for censoring_group_fairness (needs column names for protected attributes)
+        # If we have the original DataFrame, use it; otherwise create one from numpy array
+        if X_test_uncen_df is not None:
+            X_uncen_for_fairness = X_test_uncen_df.copy()
+        else:
+            X_uncen_for_fairness = pd.DataFrame(X_test_uncen)
+            
+        if X_test_cen_df is not None:
+            X_cen_for_fairness = X_test_cen_df.copy()
+        else:
+            X_cen_for_fairness = pd.DataFrame(X_test_cen)
+        
+        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_uncen_for_fairness, X_cen_for_fairness, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name)
         
     ## Group fairness measures     
     if len(np.unique(S_protected_attribute_1))==1:
@@ -400,7 +427,7 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
         F_group_protected_attribute_2 = 0.0
     else:    
         #%% group fairness measures - protected attribute 2
-        F_group_protected_attribute_2 = group_fairness(sp_test, S_protected_attribute_2, len(eval_time))        
+        F_group_protected_attribute_2 = group_fairness(sp_test, S_protected_attribute_2, len(eval_time))
 
     return cindex, brier, mean_auc, F_ind, F_cen_ind, F_cen_group, F_group_protected_attribute_1, F_group_protected_attribute_2 
 
@@ -449,7 +476,13 @@ def PNAM_Concordance(model,x,durations,events, evaltime):
     """     
     device = "cuda" if torch.cuda.is_available() else "cpu" 
     x=x.to(device)
-    surv,_ = model(x)
+    # Use forward_prob to get probabilities in [0,1] range for evaluation (like FIDP)
+    if hasattr(model, 'forward_prob'):
+        surv = model.forward_prob(x)
+    else:
+        # Fallback: apply sigmoid if method doesn't exist
+        surv, _ = model(x)
+        surv = torch.sigmoid(surv)
     y_pred = pd.DataFrame(np.transpose(surv.cpu().detach().numpy()))
     y_pred = y_pred.set_index([evaltime])
     ev     = EvalSurv(y_pred, durations, events)

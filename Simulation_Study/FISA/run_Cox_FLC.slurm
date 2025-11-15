@@ -6,7 +6,6 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
 
-module purge
 module load StdEnv/2023
 module load python/3.11
 module load arrow/21.0.0

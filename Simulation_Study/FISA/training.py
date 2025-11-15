@@ -137,7 +137,8 @@ def FIPNAM_train(dataloader, model, loss_fn, optimizer, ntimes, scale, lamda):
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         # Compute prediction error
-        pred,_ = model(X)
+        # Use raw output for training (without sigmoid), like FIDP
+        pred, _ = model(X)
         pseudo_loss_val = loss_fn(pred, y)
         target_fairness = torch.tensor(0.0).to(device)
         IFloss=criterionHinge() ## Fairness penalty constraint
@@ -198,7 +199,8 @@ def FIPNAM_evaluate(dataloader, model, loss_fn, ntimes, scale, lamda):
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
-            pred,_ = model(X)
+            # Use raw output for evaluation loss calculation (without sigmoid), like FIDP
+            pred, _ = model(X)
             pseudo_loss = loss_fn(pred, y)
             target_fairness = torch.tensor(0.0).to(device)
             IFloss=criterionHinge() ## Fairness penalty constraint
