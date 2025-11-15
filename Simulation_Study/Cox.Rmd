@@ -1,0 +1,95 @@
+---
+title: "Cox"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(survival)
+library(tidyverse)
+```
+
+```{r}
+data_I <- read.csv("data/data_I.csv")
+data_II <- read.csv("data/data_II.csv")
+flc <- read.csv("FISA/Data/FLChain/flchain.csv")
+```
+
+# fit all data
+```{r}
+fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI, data = data_II, x = TRUE)
+summary(fit)$concordance 
+```
+
+```{r}
+fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI, data = data_II, x = TRUE)
+summary(fit)$concordance 
+```
+
+```{r}
+fit <- coxph(Surv(time, status) ~ age + sex + sample.yr + kappa + lambda + flc.grp + creatinine + mgus, data = flc, x = TRUE)
+summary(fit)$concordance 
+```
+
+
+# fit with split
+```{r}
+# dat <- data_I
+dat <- data_II
+
+# Split data 64/16/20
+set.seed(123)
+n <- nrow(dat)
+
+train_idx <- sample(1:n, size = 0.64*n)
+remaining <- setdiff(1:n, train_idx)
+val_idx <- sample(remaining, size = 0.16*n)
+test_idx <- setdiff(remaining, val_idx)
+
+train <- dat[train_idx, ]
+val   <- dat[val_idx, ]
+test  <- dat[test_idx, ]
+
+fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI,
+             data = train)
+
+test$lp <- predict(fit, newdata=test, type="lp")
+
+c_index_test <- concordance(fit, newdata = test)$concordance
+
+c_index_test
+```
+
+```{r}
+dat <- flc
+
+# Split data 64/16/20
+set.seed(123)
+n <- nrow(dat)
+
+train_idx <- sample(1:n, size = 0.64*n)
+remaining <- setdiff(1:n, train_idx)
+val_idx <- sample(remaining, size = 0.16*n)
+test_idx <- setdiff(remaining, val_idx)
+
+train <- dat[train_idx, ]
+val   <- dat[val_idx, ]
+test  <- dat[test_idx, ]
+
+fit <- coxph(Surv(time, status) ~ age + sex + sample.yr + kappa + lambda + flc.grp + creatinine + mgus, data = train, x = TRUE)
+
+test$lp <- predict(fit, newdata=test, type="lp")
+
+c_index_test <- concordance(fit, newdata = test)$concordance
+
+c_index_test
+```
+
+
+
+
+
+
+
+
+
