@@ -26,7 +26,12 @@ def set_random_seed(state=1):
         set_state(state)
 
 def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs):
-    torch.cuda.set_device(0)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        try:
+            torch.cuda.set_device(0)
+        except Exception as e:
+            print(f"Warning: Could not set CUDA device: {e}. Continuing with default device.")
     RANDOM_STATE = 1
     set_random_seed(RANDOM_STATE) # Set random seed
     
