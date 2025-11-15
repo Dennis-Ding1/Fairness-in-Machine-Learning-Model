@@ -25,7 +25,7 @@ generate_data <- function(
   alpha = 0,                  # censoring dependence
   Cmax_A0 = 10,               # max follow-up (group 0)
   Cmax_A1 = 10,               # max follow-up (group 1)
-  seed = 123
+  seed = 497
 ) {
   set.seed(seed)
   
@@ -120,7 +120,7 @@ p_c <- 3
 
 # Scenario I: all assumptions hold
 data_I <- generate_data(
-  n = 5000,
+  n = 10000,
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
@@ -133,11 +133,11 @@ data_I <- generate_data(
   Cmax_A0 =3000,
   Cmax_A1 = 3000
 )
-data_I <- data_I |> filter(age > 1, C > 1)
+data_I <- data_I |> filter(age > 1, C > 1, LOS > 0, eGFR > 0, Hemoglobin > 0, CCI > 0)
 
 # Scenario II: violation of assumptions
 data_II <- generate_data(
-  n = 5000,
+  n = 10000,
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
@@ -151,7 +151,7 @@ data_II <- generate_data(
   Cmax_A1 = 3500
 )
 
-data_II <- data_II |> filter(age > 1, C > 1)
+data_II <- data_II |> filter(age > 1, C > 1, LOS > 0, eGFR > 0, Hemoglobin > 0, CCI > 0)
 
 
 # head(data_I)
@@ -286,16 +286,6 @@ write.csv(data_II, "data/data_II.csv", row.names = FALSE)
 ```
 
 
-```{r}
-fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI, data = data_I, x = TRUE)
-summary(fit)$concordance 
-```
-
-```{r}
-fit <- coxph(Surv(Y, Delta) ~ age + LOS + eGFR + Hemoglobin + CCI, data = data_II, x = TRUE)
-summary(fit)$concordance 
-```
-
 
 ```{r}
 flc <- read.csv("FISA/Data/FLChain/flchain.csv")
@@ -361,8 +351,6 @@ ggplot(flc, aes(x = mgus, fill = factor(sex))) +
   labs(title = "mgus Distribution by sex", fill = "sex") +
   theme_minimal()
 ```
-
-
 
 
 
