@@ -313,17 +313,13 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     Accuracy and fairnes measures
     """     
     
-    # Save original DataFrame formats for fairness measures (need column names)
-    X_test_uncen_df = X_test_uncen.copy() if isinstance(X_test_uncen, pd.DataFrame) else None
-    X_test_cen_df = X_test_cen.copy() if isinstance(X_test_cen, pd.DataFrame) else None
-    
-    # Convert inputs to numpy arrays if they are DataFrames (for model prediction)
+    # Convert inputs to numpy arrays if they are DataFrames (for model prediction only)
+    # Keep original DataFrames for fairness measures (consistent with FIDP and FIPNAM)
     if isinstance(data_X_test, pd.DataFrame):
         data_X_test = data_X_test.values
-    if isinstance(X_test_uncen, pd.DataFrame):
-        X_test_uncen = X_test_uncen.values
-    if isinstance(X_test_cen, pd.DataFrame):
-        X_test_cen = X_test_cen.values
+    # For X_test_uncen and X_test_cen, convert to numpy only for prediction, keep original for fairness
+    X_test_uncen_for_pred = X_test_uncen.values if isinstance(X_test_uncen, pd.DataFrame) else X_test_uncen
+    X_test_cen_for_pred = X_test_cen.values if isinstance(X_test_cen, pd.DataFrame) else X_test_cen
     
     # Predict survival functions for test data
     surv_funcs_test = model.predict_survival_function(data_X_test, return_array=False)
@@ -339,9 +335,9 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     cif_test = 1 - sp_test
     
     # Predict for uncensored test data
-    if len(X_test_uncen) > 0:
-        surv_funcs_test_uncen = model.predict_survival_function(X_test_uncen, return_array=False)
-        sp_test_uncen = np.zeros((len(X_test_uncen), len(eval_time)))
+    if len(X_test_uncen_for_pred) > 0:
+        surv_funcs_test_uncen = model.predict_survival_function(X_test_uncen_for_pred, return_array=False)
+        sp_test_uncen = np.zeros((len(X_test_uncen_for_pred), len(eval_time)))
         for i, surv_func in enumerate(surv_funcs_test_uncen):
             for j, t in enumerate(eval_time):
                 sp_test_uncen[i, j] = surv_func(t)
@@ -351,9 +347,9 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
         cif_test_uncen = np.zeros((0, len(eval_time)))
     
     # Predict for censored test data
-    if len(X_test_cen) > 0:
-        surv_funcs_test_cen = model.predict_survival_function(X_test_cen, return_array=False)
-        sp_test_cen = np.zeros((len(X_test_cen), len(eval_time)))
+    if len(X_test_cen_for_pred) > 0:
+        surv_funcs_test_cen = model.predict_survival_function(X_test_cen_for_pred, return_array=False)
+        sp_test_cen = np.zeros((len(X_test_cen_for_pred), len(eval_time)))
         for i, surv_func in enumerate(surv_funcs_test_cen):
             for j, t in enumerate(eval_time):
                 sp_test_cen[i, j] = surv_func(t)
@@ -393,28 +389,17 @@ def Cox_Evaluation(model, data_X_test, X_test_uncen,  X_test_cen, data_time_trai
     ## individual fairness measures
     F_ind = individual_fairness(sp_test,data_X_test,len(eval_time), scale_fairness)
     ## Censoring individual fairness measures    
-    if len(X_test_uncen) > 0 and len(X_test_cen) > 0:
+    if len(X_test_uncen_for_pred) > 0 and len(X_test_cen_for_pred) > 0:
         F_cen_ind= censoring_individual_fairness(sp_test_uncen, sp_test_cen, X_test_uncen, X_test_cen, test_time_uncen, test_time_cen, len(eval_time),scale_fairness)
     else:
         F_cen_ind = 0.0
     
     ## Cesnoring Group fairness measures  
-    if X_test_cen.shape[0]==0:
+    if len(X_test_cen_for_pred)==0:
         F_cen_group=0.0
     else:
-        # Use DataFrame format for censoring_group_fairness (needs column names for protected attributes)
-        # If we have the original DataFrame, use it; otherwise create one from numpy array
-        if X_test_uncen_df is not None:
-            X_uncen_for_fairness = X_test_uncen_df.copy()
-        else:
-            X_uncen_for_fairness = pd.DataFrame(X_test_uncen)
-            
-        if X_test_cen_df is not None:
-            X_cen_for_fairness = X_test_cen_df.copy()
-        else:
-            X_cen_for_fairness = pd.DataFrame(X_test_cen)
-        
-        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_uncen_for_fairness, X_cen_for_fairness, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name)
+        # Pass original DataFrames directly (consistent with FIDP and FIPNAM)
+        F_cen_group=censoring_group_fairness(sp_test_uncen, sp_test_cen, X_test_uncen, X_test_cen, test_time_uncen, test_time_cen, len(eval_time),scale_fairness, dataset_name)
         
     ## Group fairness measures     
     if len(np.unique(S_protected_attribute_1))==1:
