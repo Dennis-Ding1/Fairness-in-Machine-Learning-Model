@@ -172,8 +172,10 @@ class ExU(torch.nn.Module):
     def reset_parameters(self) -> None:
         ## Page(4): initializing the weights using a normal distribution
         ##          N(x; 0:5) with x 2 [3; 4] works well in practice.
-        torch.nn.init.trunc_normal_(self.weights, mean=4.0, std=0.5)
-        torch.nn.init.trunc_normal_(self.bias, std=0.5)
+        # Explicitly specify a=3.0, b=4.0 to match the intended distribution [3, 4]
+        torch.nn.init.trunc_normal_(self.weights, mean=4.0, std=0.5, a=3.0, b=4.0)
+        # For bias, use default truncation (mean=0, std=0.5, default a=-2, b=2 is fine)
+        torch.nn.init.trunc_normal_(self.bias, mean=0.0, std=0.5)
 
     def forward(
         self,
@@ -211,7 +213,8 @@ class LinReLU(torch.nn.Module):
 
     def reset_parameters(self) -> None:
         nn.init.xavier_uniform_(self.weights)
-        torch.nn.init.trunc_normal_(self.bias, std=0.5)
+        # Explicitly specify mean=0.0 for clarity (default truncation [-2, 2] is fine for bias)
+        torch.nn.init.trunc_normal_(self.bias, mean=0.0, std=0.5)
 
     def forward(
         self,
