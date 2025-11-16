@@ -1,15 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=FIDP_FLC
-#SBATCH --output=outputs/FIDP_FLC_%A_%a.out
-#SBATCH --error=outputs/FIDP_FLC_%A_%a.err
+#SBATCH --output=outputs/FIDP_FLC_%A.out
+#SBATCH --error=outputs/FIDP_FLC_%A.err
 #SBATCH --time=05:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
-#SBATCH --array=0-2
 
-LAMBDA_VALUES=(0 0.01 0.02)
-
-LAMBDA=${LAMBDA_VALUES[$SLURM_ARRAY_TASK_ID]}
 
 module load StdEnv/2023
 module load python/3.11
@@ -37,4 +33,3 @@ python Experiment.py \
   -b 128 \
   -lr 0.01 \
   -e 30 \
-  -l $LAMBDA
