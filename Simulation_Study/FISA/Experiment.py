@@ -209,7 +209,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         scheduler = None
 
     Epochs = epochs
-    patience=5
+    patience=10
     best_val_loss=10000000.0
     
     # Fairness parameters - unified for training and evaluation
