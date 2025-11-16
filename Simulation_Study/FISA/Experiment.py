@@ -209,7 +209,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
         scheduler = None
 
     Epochs = epochs
-    patience=10
+    patience=8
     best_val_loss=10000000.0
     
     # Fairness parameters - unified for training and evaluation
@@ -261,12 +261,12 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
                 cindex.append(val_cindex)
                 
                 # Print all metrics
-                print(f'Epoch {epoch}:')
+                print(f'Epoch {epoch+1}:')
                 print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
                 print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
             else:
                 # Only print loss for non-evaluation epochs
-                print(f'Epoch {epoch}:')
+                print(f'Epoch {epoch+1}:')
                 print(f'  Train   - Loss: {train_loss:.6f}')
                 print(f'  Valid   - Loss: {val_loss:.6f}')
 
@@ -343,12 +343,12 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
                 cindex.append(val_cindex)
                 
                 # Print all metrics
-                print(f'Epoch {epoch}:')
+                print(f'Epoch {epoch+1}:')
                 print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
                 print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
             else:
                 # Only print loss for non-evaluation epochs
-                print(f'Epoch {epoch}:')
+                print(f'Epoch {epoch+1}:')
                 print(f'  Train   - Loss: {train_loss:.6f}')
                 print(f'  Valid   - Loss: {val_loss:.6f}')
         
