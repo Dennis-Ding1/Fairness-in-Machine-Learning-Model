@@ -77,7 +77,7 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
     Epochs = epochs
-    patience=5
+    patience=10
     best_val_loss=10000000.0
     
     scale=torch.tensor(0.01) ## Scale parameter
