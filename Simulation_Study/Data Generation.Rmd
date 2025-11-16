@@ -6,6 +6,8 @@ title: "Data Generation"
 library(ggplot2)
 library(survival)
 library(tidyverse)
+library(knitr)
+library(kableExtra)
 ```
 
 
@@ -87,7 +89,7 @@ generate_data <- function(
 
 # X choice:
 mu_X = c(50,    # age
-         3,   # LOS (Length of Stay)
+         5,   # LOS (Length of Stay)
          70,    # eGFR
          13.2,  # Hemoglobin
          2)     # CCI (Charlson Comorbidity Index)
@@ -120,7 +122,7 @@ p_c <- 3
 
 # Scenario I: all assumptions hold
 data_I <- generate_data(
-  n = 10000,
+  n = 8000,
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
@@ -133,11 +135,12 @@ data_I <- generate_data(
   Cmax_A0 =3000,
   Cmax_A1 = 3000
 )
-data_I <- data_I |> filter(age > 1, C > 1, LOS > 0, eGFR > 0, Hemoglobin > 0, CCI > 0)
+data_I <- data_I |> filter(age > 1, C > 1, LOS > 0.1, eGFR > 0.1, Hemoglobin > 0.1, CCI > 0.1)
+data_I$CCI  <- round(data_I$CCI)
 
 # Scenario II: violation of assumptions
 data_II <- generate_data(
-  n = 10000,
+  n = 8000,
   mu_X = mu_X,
   sd_X = sd_X,
   beta_X = beta_X,
@@ -151,7 +154,8 @@ data_II <- generate_data(
   Cmax_A1 = 3500
 )
 
-data_II <- data_II |> filter(age > 1, C > 1, LOS > 0, eGFR > 0, Hemoglobin > 0, CCI > 0)
+data_II <- data_II |> filter(age > 1, C > 1, LOS > 0.1, eGFR > 0.1, Hemoglobin > 0.1, CCI > 0.1)
+data_II$CCI  <- round(data_II$CCI)
 
 
 # head(data_I)
@@ -275,6 +279,76 @@ ggplot(dat, aes(x = LOS, fill = factor(A))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
   labs(title = "LOS Distribution by Group", fill = "Group A") +
   theme_minimal()
+
+```
+
+```{r}
+var_order <- c("T_true", "C", "Y", "age", "LOS", "eGFR", "Hemoglobin", "CCI")
+var_sim_ii <- c("T_true", "C", "Y")
+
+summary_table <- function(df, name){
+  if (name == "SIM_II") {
+    vars_to_use <- var_sim_ii
+  } else {
+    vars_to_use <- var_order
+  }
+  
+  df %>%
+    select(all_of(vars_to_use)) %>%
+    pivot_longer(cols = everything(),
+                 names_to = "Variable",
+                 values_to = "Value") %>%
+    group_by(Variable) %>%
+    summarise(
+      Min    = round(min(Value, na.rm = TRUE), 2),
+      Q1     = round(quantile(Value, 0.25, na.rm = TRUE), 2),
+      Median = round(median(Value, na.rm = TRUE), 2),
+      Mean   = round(mean(Value, na.rm = TRUE), 2),
+      Q3     = round(quantile(Value, 0.75, na.rm = TRUE), 2),
+      Max    = round(max(Value, na.rm = TRUE), 2),
+      .groups = "drop"
+    ) %>%
+    mutate(Dataset = name) %>%
+    relocate(Dataset, Variable)
+}
+tbl_I  <- summary_table(data_I, "SIM_I")
+
+tbl_II <- summary_table(data_II, "SIM_II")
+
+summary_all <- bind_rows(tbl_I, tbl_II) %>%
+  mutate(Variable = factor(Variable, levels = var_order),
+         Dataset  = factor(Dataset, levels = c("SIM_I", "SIM_II"))) %>%
+  arrange(Dataset, Variable)  
+
+summary_all %>%
+  kable("html", booktabs = TRUE, caption = "Summary Statistics for Two Simulated Datasets") %>%
+  kable_styling(latex_options = c("hold_position")) 
+  # save_kable("summary_statistic.tex")
+```
+
+```{r}
+censor_table <- function(df, name){
+  df %>%
+    mutate(censored = 1 - Delta) %>%
+    summarise(
+      Censor_A0 = mean(censored[A == 0], na.rm=TRUE),
+      Censor_A1 = mean(censored[A == 1], na.rm=TRUE),
+      Censor_Overall = mean(censored, na.rm=TRUE)
+    ) %>%
+    mutate(Dataset = name) %>%
+    select(Dataset, everything())
+}
+
+cen_I  <- censor_table(data_I, "Data I")
+cen_II <- censor_table(data_II, "Data II")
+
+censor_all <- bind_rows(cen_I, cen_II)
+
+censor_all %>%
+  kable("html", booktabs = TRUE, digits = 3,
+        caption = "Censoring Rates by Group and Overall") %>%
+  kable_styling(latex_options = c("hold_position"))
+  # save_kable("censoring_rate.tex")
 
 ```
 
