@@ -2,7 +2,7 @@
 #SBATCH --job-name=FIDP_FLC
 #SBATCH --output=outputs/FIDP_FLC_%A_%a.out
 #SBATCH --error=outputs/FIDP_FLC_%A_%a.err
-#SBATCH --time=05:00:00
+#SBATCH --time=10:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
 #SBATCH --array=0-2
@@ -36,5 +36,5 @@ python Experiment.py \
   -d "FLChain" \
   -b 128 \
   -lr 0.01 \
-  -e 30 \
+  -e 50 \
   -l $LAMBDA
