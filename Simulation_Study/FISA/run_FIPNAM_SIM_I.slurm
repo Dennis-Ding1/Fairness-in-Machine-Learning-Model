@@ -37,5 +37,5 @@ python Experiment.py \
   -d "SIMULATED" \
   -b 128 \
   -lr 0.01 \
-  -e 50 \
+  -e 3 \
   -l $LAMBDA

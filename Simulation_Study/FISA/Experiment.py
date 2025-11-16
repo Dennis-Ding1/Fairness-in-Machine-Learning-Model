@@ -77,9 +77,9 @@ def compute_metrics(model, X_data, time_data, event_data, time_train, event_trai
                 if hasattr(model, 'forward_prob'):
                     sp_pred = model.forward_prob(torch.tensor(np.array(X_data, dtype='float32')).to(device)).cpu().detach().numpy()
                 else:
-                    # Fallback: apply sigmoid if method doesn't exist (same as FIPNAM_Evaluation)
+                    # Fallback: FIPNAM forward already applies sigmoid
                     sp_pred, _ = model(torch.tensor(np.array(X_data, dtype='float32')).to(device))
-                    sp_pred = torch.sigmoid(sp_pred).cpu().detach().numpy()
+                    sp_pred = sp_pred.cpu().detach().numpy()
             else:  # FIDP
                 if hasattr(model, 'forward_prob'):
                     sp_pred = model.forward_prob(torch.tensor(np.array(X_data, dtype='float32')).to(device)).cpu().detach().numpy()

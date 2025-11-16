@@ -137,7 +137,7 @@ def FIPNAM_train(dataloader, model, loss_fn, optimizer, ntimes, scale, lamda):
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         # Compute prediction error
-        # Use raw output for training (without sigmoid), like FIDP
+        # FIPNAM forward already applies sigmoid (unlike FIDP which uses raw output)
         pred, _ = model(X)
         pseudo_loss_val = loss_fn(pred, y)
         target_fairness = torch.tensor(0.0).to(device)
@@ -199,7 +199,7 @@ def FIPNAM_evaluate(dataloader, model, loss_fn, ntimes, scale, lamda):
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
-            # Use raw output for evaluation loss calculation (without sigmoid), like FIDP
+            # FIPNAM forward already applies sigmoid (unlike FIDP which uses raw output)
             pred, _ = model(X)
             pseudo_loss = loss_fn(pred, y)
             target_fairness = torch.tensor(0.0).to(device)
