@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 from sksurv.util import Surv
+from sksurv.metrics import cumulative_dynamic_auc
+from pycox.evaluation import EvalSurv
 from model import *
 from fairness_measure import *
 from utils import *
@@ -42,6 +44,82 @@ def set_random_seed(state=1):
     
     # Python hash seed for dictionary ordering
     os.environ['PYTHONHASHSEED'] = str(state)
+
+def compute_metrics(model, X_data, time_data, event_data, time_train, event_train, eval_time, model_name='FIDP'):
+    """
+    Compute c-index, brier score, and AUC for training/validation data.
+    
+    Arguments:
+        model: Trained model (FIDP or FIPNAM)
+        X_data: Input features (numpy array)
+        time_data: Observed time (numpy array)
+        event_data: Event status (numpy array)
+        time_train: Training time (for AUC calculation)
+        event_train: Training event status (for AUC calculation)
+        eval_time: Evaluation time points
+        model_name: Model name ('FIDP' or 'FIPNAM')
+    
+    Returns:
+        cindex: Concordance index
+        brier: Integrated Brier score
+        mean_auc: Mean AUC
+    """
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # Save model training state
+    was_training = model.training
+    model.eval()
+    
+    try:
+        with torch.no_grad():
+            # Get predictions - reuse logic from FIDP_Evaluation and FIPNAM_Evaluation
+            if model_name == 'FIPNAM':
+                if hasattr(model, 'forward_prob'):
+                    sp_pred = model.forward_prob(torch.tensor(np.array(X_data, dtype='float32')).to(device)).cpu().detach().numpy()
+                else:
+                    # Fallback: apply sigmoid if method doesn't exist (same as FIPNAM_Evaluation)
+                    sp_pred, _ = model(torch.tensor(np.array(X_data, dtype='float32')).to(device))
+                    sp_pred = torch.sigmoid(sp_pred).cpu().detach().numpy()
+            else:  # FIDP
+                if hasattr(model, 'forward_prob'):
+                    sp_pred = model.forward_prob(torch.tensor(np.array(X_data, dtype='float32')).to(device)).cpu().detach().numpy()
+                else:
+                    # Fallback: apply sigmoid if method doesn't exist (same as FIDP_Evaluation)
+                    sp_pred = torch.sigmoid(model(torch.tensor(np.array(X_data, dtype='float32')).to(device))).cpu().detach().numpy()
+        
+        cif_pred = 1 - sp_pred
+        
+        # Prepare survival data structures
+        event_data_bool = event_data.astype(bool)
+        event_train_bool = event_train.astype(bool)
+        
+        survival_train = np.dtype([('event', event_train_bool.dtype), ('surv_time', time_train.dtype)])
+        survival_train = np.empty(len(event_train_bool), dtype=survival_train)
+        survival_train['event'] = event_train_bool
+        survival_train['surv_time'] = time_train
+        
+        survival_data = np.dtype([('event', event_data_bool.dtype), ('surv_time', time_data.dtype)])
+        survival_data = np.empty(len(event_data_bool), dtype=survival_data)
+        survival_data['event'] = event_data_bool
+        survival_data['surv_time'] = time_data
+        
+        # Compute AUC
+        auc, mean_auc = cumulative_dynamic_auc(survival_train, survival_data, cif_pred, eval_time)
+        
+        # Compute c-index and Brier score
+        surv = pd.DataFrame(np.transpose(sp_pred))
+        surv = surv.set_index([eval_time])
+        ev = EvalSurv(surv, np.array(time_data), np.array(event_data), censor_surv='km')
+        cindex = ev.concordance_td()
+        brier = ev.integrated_brier_score(eval_time)
+        
+        return cindex, brier, mean_auc
+    finally:
+        # Restore model training state
+        if was_training:
+            model.train()
+        else:
+            model.eval()
 
 def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, epochs, lamda_param=0.01):
     # Configure logging to output to console
@@ -161,16 +239,29 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
             train_loss = FIDP_train(train_loader, model, loss_fn, optimizer, len(eval_time),scale, lamda)
             train_losses.append(train_loss)
             logging.info(f"epoch {epoch} | train | {train_loss}")
-            print('Epoch:',epoch,'train loss:', train_loss)
-
+            
             val_loss = FIDP_evaluate(validate_loader, model, loss_fn, len(eval_time),scale, lamda)
             val_losses.append(val_loss)
             logging.info(f"epoch {epoch} | validate |{val_loss}")
-            print('Epoch:',epoch, 'validation loss:', val_loss)
-
-            metrics=DP_Concordance(model,torch.tensor(data_X_val),np.array(data_time_val),np.array(data_event_val),eval_time)
-            cindex.append(metrics)
-            print('Epoch:',epoch, 'validation C-index:', metrics)
+            
+            # Compute metrics for training set
+            train_cindex, train_brier, train_auc = compute_metrics(
+                model, data_X_train, data_time_train, data_event_train, 
+                data_time_train, data_event_train, eval_time, model_name='FIDP'
+            )
+            
+            # Compute metrics for validation set
+            val_cindex, val_brier, val_auc = compute_metrics(
+                model, data_X_val, data_time_val, data_event_val,
+                data_time_train, data_event_train, eval_time, model_name='FIDP'
+            )
+            
+            cindex.append(val_cindex)
+            
+            # Print all metrics
+            print(f'Epoch {epoch}:')
+            print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
+            print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
 
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
@@ -223,14 +314,29 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
             train_loss = FIPNAM_train(train_loader, model, loss_fn, optimizer, len(eval_time),scale, lamda)
             train_losses.append(train_loss)
             logging.info(f"epoch {epoch} | train | {train_loss}")
-            print('Epoch:',epoch,'train loss:', train_loss)
+            
             val_loss = FIPNAM_evaluate(validate_loader, model, loss_fn, len(eval_time),scale, lamda)
             val_losses.append(val_loss)
             logging.info(f"epoch {epoch} | validate |{val_loss}")
-            print('Epoch:',epoch, 'validation loss:', val_loss)
-            metrics=PNAM_Concordance(model,torch.tensor(data_X_val),np.array(data_time_val),np.array(data_event_val),eval_time)
-            cindex.append(metrics)
-            print('Epoch:',epoch, 'validation C-index:', metrics)
+            
+            # Compute metrics for training set
+            train_cindex, train_brier, train_auc = compute_metrics(
+                model, data_X_train, data_time_train, data_event_train, 
+                data_time_train, data_event_train, eval_time, model_name='FIPNAM'
+            )
+            
+            # Compute metrics for validation set
+            val_cindex, val_brier, val_auc = compute_metrics(
+                model, data_X_val, data_time_val, data_event_val,
+                data_time_train, data_event_train, eval_time, model_name='FIPNAM'
+            )
+            
+            cindex.append(val_cindex)
+            
+            # Print all metrics
+            print(f'Epoch {epoch}:')
+            print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
+            print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
         
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
