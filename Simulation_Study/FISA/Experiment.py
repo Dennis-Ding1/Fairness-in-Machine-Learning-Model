@@ -244,24 +244,31 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
             val_losses.append(val_loss)
             logging.info(f"epoch {epoch} | validate |{val_loss}")
             
-            # Compute metrics for training set
-            train_cindex, train_brier, train_auc = compute_metrics(
-                model, data_X_train, data_time_train, data_event_train, 
-                data_time_train, data_event_train, eval_time, model_name='FIDP'
-            )
-            
-            # Compute metrics for validation set
-            val_cindex, val_brier, val_auc = compute_metrics(
-                model, data_X_val, data_time_val, data_event_val,
-                data_time_train, data_event_train, eval_time, model_name='FIDP'
-            )
-            
-            cindex.append(val_cindex)
-            
-            # Print all metrics
-            print(f'Epoch {epoch}:')
-            print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
-            print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
+            # Compute metrics every 3 epochs to save time
+            if epoch % 3 == 0 or epoch == Epochs - 1:
+                # Compute metrics for training set
+                train_cindex, train_brier, train_auc = compute_metrics(
+                    model, data_X_train, data_time_train, data_event_train, 
+                    data_time_train, data_event_train, eval_time, model_name='FIDP'
+                )
+                
+                # Compute metrics for validation set
+                val_cindex, val_brier, val_auc = compute_metrics(
+                    model, data_X_val, data_time_val, data_event_val,
+                    data_time_train, data_event_train, eval_time, model_name='FIDP'
+                )
+                
+                cindex.append(val_cindex)
+                
+                # Print all metrics
+                print(f'Epoch {epoch}:')
+                print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
+                print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
+            else:
+                # Only print loss for non-evaluation epochs
+                print(f'Epoch {epoch}:')
+                print(f'  Train   - Loss: {train_loss:.6f}')
+                print(f'  Valid   - Loss: {val_loss:.6f}')
 
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
@@ -319,24 +326,31 @@ def run_experiment(fn_csv, path_name, model_name, dataset_name, batch_size, lr, 
             val_losses.append(val_loss)
             logging.info(f"epoch {epoch} | validate |{val_loss}")
             
-            # Compute metrics for training set
-            train_cindex, train_brier, train_auc = compute_metrics(
-                model, data_X_train, data_time_train, data_event_train, 
-                data_time_train, data_event_train, eval_time, model_name='FIPNAM'
-            )
-            
-            # Compute metrics for validation set
-            val_cindex, val_brier, val_auc = compute_metrics(
-                model, data_X_val, data_time_val, data_event_val,
-                data_time_train, data_event_train, eval_time, model_name='FIPNAM'
-            )
-            
-            cindex.append(val_cindex)
-            
-            # Print all metrics
-            print(f'Epoch {epoch}:')
-            print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
-            print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
+            # Compute metrics every 3 epochs to save time
+            if epoch % 3 == 0 or epoch == Epochs - 1:
+                # Compute metrics for training set
+                train_cindex, train_brier, train_auc = compute_metrics(
+                    model, data_X_train, data_time_train, data_event_train, 
+                    data_time_train, data_event_train, eval_time, model_name='FIPNAM'
+                )
+                
+                # Compute metrics for validation set
+                val_cindex, val_brier, val_auc = compute_metrics(
+                    model, data_X_val, data_time_val, data_event_val,
+                    data_time_train, data_event_train, eval_time, model_name='FIPNAM'
+                )
+                
+                cindex.append(val_cindex)
+                
+                # Print all metrics
+                print(f'Epoch {epoch}:')
+                print(f'  Train   - Loss: {train_loss:.6f}, C-index: {train_cindex:.6f}, Brier: {train_brier:.6f}, AUC: {train_auc:.6f}')
+                print(f'  Valid   - Loss: {val_loss:.6f}, C-index: {val_cindex:.6f}, Brier: {val_brier:.6f}, AUC: {val_auc:.6f}')
+            else:
+                # Only print loss for non-evaluation epochs
+                print(f'Epoch {epoch}:')
+                print(f'  Train   - Loss: {train_loss:.6f}')
+                print(f'  Valid   - Loss: {val_loss:.6f}')
         
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
