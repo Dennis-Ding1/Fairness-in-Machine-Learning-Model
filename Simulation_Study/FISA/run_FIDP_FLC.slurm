@@ -36,5 +36,5 @@ python Experiment.py \
   -d "FLChain" \
   -b 128 \
   -lr 0.01 \
-  -e 30 \
+  -e 3 \
   -l $LAMBDA
