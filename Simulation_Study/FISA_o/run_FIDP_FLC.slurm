@@ -2,7 +2,7 @@
 #SBATCH --job-name=FIDP_FLC
 #SBATCH --output=outputs/FIDP_FLC_%A.out
 #SBATCH --error=outputs/FIDP_FLC_%A.err
-#SBATCH --time=05:00:00
+#SBATCH --time=10:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=10
 
