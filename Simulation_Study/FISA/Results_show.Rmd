@@ -6,6 +6,7 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(kableExtra)
+library(patchwork)
 ```
 
 ```{r}
@@ -17,22 +18,39 @@ results_all <- files %>%
 
 results_all <- results_all %>%
   mutate(
-    Model = str_extract(file, "(FIDP|FIPNAM)"),
-    Data = str_extract(file, "(SIMULATED_II|SIMULATED_I|FLChain)"),
-    Lambda = str_extract(file, "lambda_[0-9_]+") %>%
-               str_remove("lambda_") %>%
-               str_replace("_", ".") %>% 
-               as.numeric()
-  )
+    Model = case_when(
+      str_detect(file, "FIDP")   ~ "FIDP",
+      str_detect(file, "FIPNAM") ~ "FIPNAM",
+      str_detect(file, "Cox")    ~ "Cox",
+      TRUE                       ~ NA_character_
+    ),
+    
+    Data_raw = str_extract(file, "(SIMULATED_II|SIMULATED_I|FLChain)"),
+    Data = case_when(
+      Data_raw == "SIMULATED_I"  ~ "SIM_I",
+      Data_raw == "SIMULATED_II" ~ "SIM_II",
+      TRUE                       ~ Data_raw
+    ),
+    
+    Lambda_raw = str_extract(file, "lambda_[0-9_]+"),
+    Lambda = Lambda_raw %>%
+      str_remove("lambda_") %>%
+      str_replace("_", ".") %>%
+      as.numeric()
+  ) %>%
+  select(-Lambda_raw)
 
 
 ```
 
 ```{r}
 table_score <- results_all %>%
-  select(Model, Data, Lambda,
+  mutate(
+    Lambda_display = ifelse(Model == "Cox", "/", as.character(Lambda)) 
+  ) %>%
+  select(Model, Data, Lambda = Lambda_display,
          Cindex, Brier, AUC,
-         F_I, F_CI) %>%
+         F_I, F_CI, F_CG, F_G_Prot_1, F_G_Prot_2) %>%
   arrange(Model, Data, Lambda)
 
 table_score %>%
@@ -46,34 +64,23 @@ table_score_latex <- table_score %>%
 writeLines(table_score_latex, "table_score.tex")
 ```
 
-```{r}
-table_group <- results_all %>%
-  select(Model, Data, Lambda,
-         F_CG, F_G_Prot_1, F_G_Prot_2) %>%
-  arrange(Model, Data, Lambda)
-
-table_group %>%
-  kbl(digits = 4, caption = "Group-level Fairness Metrics") %>%
-  kable_classic(full_width = FALSE)
-
-table_group_latex <- table_group %>%
-  kbl(format = "latex", booktabs = TRUE) %>%
-  kable_styling()
-
-writeLines(table_group_latex, "table_group.tex")
-
-```
 
 ```{r}
 fair_cols <- c("F_I", "F_CI", "F_CG",
                "F_G_Prot_1", "F_G_Prot_2")
 
 results_fair_long <- results_all %>%
+  filter(Model != "Cox") %>%
   pivot_longer(cols = all_of(fair_cols),
                names_to = "Metric",
-               values_to = "Value")
+               values_to = "Value") %>%
+  mutate(
+    Metric = factor(Metric, levels = c("F_I", "F_CI", "F_CG",
+               "F_G_Prot_1", "F_G_Prot_2"))
+  )
 
-p <- ggplot(results_fair_long,
+
+p_fl <- ggplot(results_fair_long,
        aes(x = Lambda, y = Value, color = Metric)) +
   geom_line(linewidth = 1.1) +
   geom_point(size = 2) +
@@ -81,17 +88,132 @@ p <- ggplot(results_fair_long,
   theme_bw(base_size = 14) +
   labs(title = "Fairness Metrics Across Lambda",
        x = "Lambda",
-       y = "Metric Value")
+       y = "Metric Value") +
+  scale_x_continuous(breaks = c(0, 0.01, 0.02))
 
-p
-ggsave("Fairness.png", p, width = 12, height = 8, dpi = 300)
+p_fl
+
+ggsave("fair_lambda.png", p_fl, width = 12, height = 8, dpi = 300)
 ```
 
 ```{r}
+perf_cols <- c("Cindex", "Brier", "AUC")
+
+results_perf_long <- results_all %>%
+  filter(Model != "Cox") %>% 
+  pivot_longer(cols = all_of(perf_cols),
+               names_to = "Metric",
+               values_to = "Value") %>%
+  mutate(
+    Metric = factor(Metric, levels = c("Cindex", "AUC", "Brier"))
+  )
+
+metric_colors <- c(
+  "Cindex" = "tomato",
+  "AUC"    = "skyblue",
+  "Brier"  = "lightgreen"
+)
+
+p_perf_auc <- results_perf_long %>%
+  filter(Metric %in% c("Cindex", "AUC")) %>%
+  ggplot(aes(x = Lambda, y = Value, color = Metric)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  facet_grid(Model ~ Data, scales = "free_y") +
+  labs(
+    title = "Performace Metrics Across Lambda",
+    x = "Lambda", y = "Metric Value", color = "Metric"
+  ) +
+  scale_x_continuous(breaks = c(0, 0.01, 0.02)) +
+  scale_color_manual(values = metric_colors) +
+  theme_bw(base_size = 14)
+
+p_perf_brier <- results_perf_long %>%
+  filter(Metric == "Brier") %>%
+  ggplot(aes(x = Lambda, y = Value, color = Metric)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  facet_grid(Model ~ Data, scales = "free_y") +
+  labs(
+    x = "Lambda", y = "Brier Score", color = "Metric"
+  ) +
+  scale_x_continuous(breaks = c(0, 0.01, 0.02)) +
+  scale_color_manual(values = metric_colors) +
+  theme_bw(base_size = 14)
+
+p_pl <- (p_perf_auc | p_perf_brier) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+p_pl
+
+ggsave("perf_lambda.png", p_pl, width = 12, height = 6, dpi = 300)
 
 ```
 
 
+
+```{r}
+metric_perf <- c("Cindex", "Brier", "AUC")
+
+results_perf <- results_all %>%
+  filter(
+    Model == "Cox" | Lambda == 0
+  ) %>%
+  pivot_longer(cols = all_of(metric_perf),
+               names_to = "Metric",
+               values_to = "Value") %>%
+  mutate(
+    Metric = factor(Metric, levels = c("Cindex", "AUC", "Brier"))
+  )
+
+p_pm <- ggplot(results_perf,
+             aes(x = Model, y = Value, color = Model, group = Metric)) +
+  geom_point(size = 3) +
+  geom_line(linewidth = 1, color = "grey60") +
+  facet_grid(Metric ~ Data, scales = "free_y") +
+  theme_bw(base_size = 14) +
+  labs(title = "Performace Metrics Across Models",
+       x = "Model",
+       y = "Metric Value")
+
+p_pm
+
+ggsave("perf_model.png", p_pm, width = 12, height = 6, dpi = 300)
+
+```
+
+
+
+```{r}
+metric_set1 <- c("F_I", "F_CI", "F_CG", "F_G_Prot_1", "F_G_Prot_2")
+
+results_comp1 <- results_all %>%
+  filter(
+    Model == "Cox" | Lambda == 0
+  ) %>%
+  pivot_longer(cols = all_of(metric_set1),
+               names_to = "Metric",
+               values_to = "Value") %>%
+  mutate(
+    Metric = factor(Metric, levels = c("F_I", "F_CI", "F_CG", "F_G_Prot_1", "F_G_Prot_2"))
+  )
+
+p_fm <- ggplot(results_comp1,
+             aes(x = Model, y = Value, color = Model, group = Metric)) +
+  geom_point(size = 3) +
+  geom_line(linewidth = 1, color = "grey60") +
+  facet_grid(Metric ~ Data, scales = "free_y") +
+  theme_bw(base_size = 14) +
+  labs(title = "Fairness Metrics Across Models",
+       x = "Model",
+       y = "Metric Value")
+
+p_fm
+
+ggsave("fair_model.png", p_fm, width = 12, height = 8, dpi = 300)
+
+```
 
 
 
