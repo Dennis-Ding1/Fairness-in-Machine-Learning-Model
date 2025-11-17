@@ -1,0 +1,182 @@
+created virtual environment CPython3.11.5.final.0-64 in 378ms
+  creator CPython3Posix(dest=/dev/shm/slurm.dinghaoc.498099/env, clear=False, no_vcs_ignore=False, global=False)
+  seeder FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=/tmp/tmpm8to2oqx)
+    added seed packages: pip==23.2.1, setuptools==68.0.0, wheel==0.41.1
+  activators BashActivator,CShellActivator,FishActivator,NushellActivator,PowerShellActivator,PythonActivator
+Starting experiment: FIDP on FLChain
+Data file: Data/FLChain/flchain.csv
+Batch size: 128, Learning rate: 0.01, Epochs: 40
+Lambda (fairness-accuracy trade-off): 0.01
+------------------------------------------------------------
+Loading and preprocessing data...
+Computing pseudo values for training data...
+  Computing survival function for 4171 samples...
+  Computing leave-one-out survival for 4171 samples (this may take a while)...
+  Processing sample 500/4171 (12.0%)...
+  Processing sample 1000/4171 (24.0%)...
+  Processing sample 1500/4171 (36.0%)...
+  Processing sample 2000/4171 (48.0%)...
+  Processing sample 2500/4171 (59.9%)...
+  Processing sample 3000/4171 (71.9%)...
+  Processing sample 3500/4171 (83.9%)...
+  Processing sample 4000/4171 (95.9%)...
+  Finalizing pseudo values...
+Computing pseudo values for validation data...
+  Computing survival function for 1044 samples...
+  Computing leave-one-out survival for 1044 samples (this may take a while)...
+  Processing sample 500/1044 (47.9%)...
+  Processing sample 1000/1044 (95.8%)...
+  Finalizing pseudo values...
+Computing pseudo values for test data...
+  Computing survival function for 1304 samples...
+  Computing leave-one-out survival for 1304 samples (this may take a while)...
+  Processing sample 500/1304 (38.3%)...
+  Processing sample 1000/1304 (76.7%)...
+  Finalizing pseudo values...
+Pseudo values computation completed!
+Fairness parameters - Scale: 0.01 (FIXED), Lambda: 0.01
+Epoch 1
+-------------------------------
+  Loss breakdown - Pseudo: 0.253467, Fairness: 0.365039 (λ=0.010), Total: 0.257118
+Epoch 1:
+  Train   - Loss: 0.257118, C-index: 0.793743, Brier: 0.167622, AUC: 0.833786
+  Valid   - Loss: 0.143043, C-index: 0.800677, Brier: 0.168385, AUC: 0.843630
+Epoch 2
+-------------------------------
+  Loss breakdown - Pseudo: 0.168561, Fairness: 0.297058 (λ=0.010), Total: 0.171531
+Epoch 2:
+  Train   - Loss: 0.171531
+  Valid   - Loss: 0.135045
+Epoch 3
+-------------------------------
+  Loss breakdown - Pseudo: 0.158432, Fairness: 0.277102 (λ=0.010), Total: 0.161203
+Epoch 3:
+  Train   - Loss: 0.161203
+  Valid   - Loss: 0.143583
+Counter 1 of 8
+Epoch 4
+-------------------------------
+  Loss breakdown - Pseudo: 0.154507, Fairness: 0.272883 (λ=0.010), Total: 0.157236
+Epoch 4:
+  Train   - Loss: 0.157236, C-index: 0.793109, Brier: 0.174395, AUC: 0.830301
+  Valid   - Loss: 0.136366, C-index: 0.801471, Brier: 0.175265, AUC: 0.842138
+Counter 2 of 8
+Epoch 5
+-------------------------------
+  Loss breakdown - Pseudo: 0.144973, Fairness: 0.265839 (λ=0.010), Total: 0.147631
+Epoch 5:
+  Train   - Loss: 0.147631
+  Valid   - Loss: 0.135141
+Counter 3 of 8
+Epoch 6
+-------------------------------
+  Loss breakdown - Pseudo: 0.146155, Fairness: 0.258611 (λ=0.010), Total: 0.148741
+Epoch 6:
+  Train   - Loss: 0.148741
+  Valid   - Loss: 0.127122
+Epoch 7
+-------------------------------
+  Loss breakdown - Pseudo: 0.147178, Fairness: 0.258739 (λ=0.010), Total: 0.149765
+Epoch 7:
+  Train   - Loss: 0.149765, C-index: 0.792287, Brier: 0.171007, AUC: 0.830933
+  Valid   - Loss: 0.133867, C-index: 0.799478, Brier: 0.171969, AUC: 0.842284
+Counter 1 of 8
+Epoch 8
+-------------------------------
+  Loss breakdown - Pseudo: 0.148550, Fairness: 0.257856 (λ=0.010), Total: 0.151128
+Epoch 8:
+  Train   - Loss: 0.151128
+  Valid   - Loss: 0.139419
+Counter 2 of 8
+Epoch 9
+-------------------------------
+  Loss breakdown - Pseudo: 0.146832, Fairness: 0.242186 (λ=0.010), Total: 0.149254
+Epoch 9:
+  Train   - Loss: 0.149254
+  Valid   - Loss: 0.129794
+Counter 3 of 8
+Epoch 10
+-------------------------------
+  Loss breakdown - Pseudo: 0.148632, Fairness: 0.243584 (λ=0.010), Total: 0.151068
+Epoch 10:
+  Train   - Loss: 0.151068, C-index: 0.790710, Brier: 0.184682, AUC: 0.830203
+  Valid   - Loss: 0.143333, C-index: 0.798667, Brier: 0.186138, AUC: 0.843072
+Counter 4 of 8
+Epoch 11
+-------------------------------
+  Loss breakdown - Pseudo: 0.147650, Fairness: 0.252197 (λ=0.010), Total: 0.150172
+Epoch 11:
+  Train   - Loss: 0.150172
+  Valid   - Loss: 0.140382
+Counter 5 of 8
+Epoch 12
+-------------------------------
+  Loss breakdown - Pseudo: 0.148853, Fairness: 0.235070 (λ=0.010), Total: 0.151204
+Epoch 12:
+  Train   - Loss: 0.151204
+  Valid   - Loss: 0.135589
+Counter 6 of 8
+Epoch 13
+-------------------------------
+  Loss breakdown - Pseudo: 0.144467, Fairness: 0.249648 (λ=0.010), Total: 0.146964
+Epoch 13:
+  Train   - Loss: 0.146964, C-index: 0.793389, Brier: 0.175073, AUC: 0.833158
+  Valid   - Loss: 0.130761, C-index: 0.799544, Brier: 0.176141, AUC: 0.844486
+Counter 7 of 8
+Epoch 14
+-------------------------------
+  Loss breakdown - Pseudo: 0.145522, Fairness: 0.246466 (λ=0.010), Total: 0.147987
+Epoch 14:
+  Train   - Loss: 0.147987
+  Valid   - Loss: 0.151787
+Counter 8 of 8
+Epoch 15
+-------------------------------
+  Loss breakdown - Pseudo: 0.145644, Fairness: 0.249816 (λ=0.010), Total: 0.148142
+Epoch 15:
+  Train   - Loss: 0.148142
+  Valid   - Loss: 0.143818
+Counter 9 of 8
+Early stopping with best_val_loss:  0.1271215391655763
+Done!
+Your result is ready!!! Saved to: ./Results/Results_FIDP_FLChain_lambda_0_01.csv
+Loss plot saved to: ./Results/Results_FIDP_FLChain_lambda_0_01.png
+
+scontrol show job 498099
+JobId=498099 ArrayJobId=498033 ArrayTaskId=1 JobName=FIDP_FLC
+   UserId=dinghaoc(3151984) GroupId=dinghaoc(3151984) MCS_label=N/A
+   Priority=595553 Nice=0 Account=def-agoldenb-ab QOS=normal
+   JobState=COMPLETING Reason=None Dependency=(null)
+   Requeue=0 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=01:03:41 TimeLimit=10:00:00 TimeMin=N/A
+   SubmitTime=2025-11-15T22:17:13 EligibleTime=2025-11-15T22:17:14
+   AccrueTime=2025-11-15T22:17:14
+   StartTime=2025-11-15T22:44:59 EndTime=2025-11-15T23:48:40 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-11-15T22:44:59 Scheduler=Main
+   Partition=compute AllocNode:Sid=tri-login03:444166
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=tri1222
+   BatchHost=tri1222
+   NumNodes=1 NumCPUs=192 NumTasks=1 CPUs/Task=10 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=10,mem=767000M,node=1,billing=10
+   AllocTRES=cpu=192,mem=767000M,node=1,billing=192
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=10 MinMemoryNode=767000M MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/run_FIDP_FLC.slurm
+   WorkDir=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
+   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L run_FIDP_FLC.slurm 
+   StdErr=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIDP_FLC_498033_1.err
+   StdIn=/dev/null
+   StdOut=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIDP_FLC_498033_1.out
+   TresPerTask=cpu=10
+   
+
+sacct -j 498099
+JobID           JobName    Account    Elapsed  MaxVMSize     MaxRSS  SystemCPU    UserCPU ExitCode 
+------------ ---------- ---------- ---------- ---------- ---------- ---------- ---------- -------- 
+498033_1       FIDP_FLC def-agold+   01:03:41                         00:00:00   00:00:00      0:0 
+498033_1.ba+      batch def-agold+   01:03:41                         00:00:00   00:00:00      0:0 
+498033_1.ex+     extern def-agold+   01:03:41                         00:00:00   00:00:00      0:0 
+

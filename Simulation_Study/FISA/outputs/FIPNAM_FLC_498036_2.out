@@ -1,0 +1,282 @@
+created virtual environment CPython3.11.5.final.0-64 in 297ms
+  creator CPython3Posix(dest=/dev/shm/slurm.dinghaoc.498036/env, clear=False, no_vcs_ignore=False, global=False)
+  seeder FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=/tmp/tmpa9frh7z5)
+    added seed packages: pip==23.2.1, setuptools==68.0.0, wheel==0.41.1
+  activators BashActivator,CShellActivator,FishActivator,NushellActivator,PowerShellActivator,PythonActivator
+Starting experiment: FIPNAM on FLChain
+Data file: Data/FLChain/flchain.csv
+Batch size: 128, Learning rate: 0.01, Epochs: 40
+Lambda (fairness-accuracy trade-off): 0.02
+------------------------------------------------------------
+Loading and preprocessing data...
+Computing pseudo values for training data...
+  Computing survival function for 4171 samples...
+  Computing leave-one-out survival for 4171 samples (this may take a while)...
+  Processing sample 500/4171 (12.0%)...
+  Processing sample 1000/4171 (24.0%)...
+  Processing sample 1500/4171 (36.0%)...
+  Processing sample 2000/4171 (48.0%)...
+  Processing sample 2500/4171 (59.9%)...
+  Processing sample 3000/4171 (71.9%)...
+  Processing sample 3500/4171 (83.9%)...
+  Processing sample 4000/4171 (95.9%)...
+  Finalizing pseudo values...
+Computing pseudo values for validation data...
+  Computing survival function for 1044 samples...
+  Computing leave-one-out survival for 1044 samples (this may take a while)...
+  Processing sample 500/1044 (47.9%)...
+  Processing sample 1000/1044 (95.8%)...
+  Finalizing pseudo values...
+Computing pseudo values for test data...
+  Computing survival function for 1304 samples...
+  Computing leave-one-out survival for 1304 samples (this may take a while)...
+  Processing sample 500/1304 (38.3%)...
+  Processing sample 1000/1304 (76.7%)...
+  Finalizing pseudo values...
+Pseudo values computation completed!
+Fairness parameters - Scale: 0.01 (FIXED), Lambda: 0.02
+Epoch 1
+-------------------------------
+  Loss breakdown - Pseudo: 0.214643, Fairness: 0.180985 (λ=0.020), Total: 0.218263
+Epoch 1:
+  Train   - Loss: 0.218263, C-index: 0.742460, Brier: 0.164178, AUC: 0.776539
+  Valid   - Loss: 0.166698, C-index: 0.742907, Brier: 0.165389, AUC: 0.780186
+Epoch 2
+-------------------------------
+  Loss breakdown - Pseudo: 0.196662, Fairness: 0.168660 (λ=0.020), Total: 0.200035
+Epoch 2:
+  Train   - Loss: 0.200035
+  Valid   - Loss: 0.166695
+Epoch 3
+-------------------------------
+  Loss breakdown - Pseudo: 0.193268, Fairness: 0.160294 (λ=0.020), Total: 0.196474
+Epoch 3:
+  Train   - Loss: 0.196474
+  Valid   - Loss: 0.154977
+Epoch 4
+-------------------------------
+  Loss breakdown - Pseudo: 0.195456, Fairness: 0.153632 (λ=0.020), Total: 0.198528
+Epoch 4:
+  Train   - Loss: 0.198528, C-index: 0.745929, Brier: 0.157030, AUC: 0.782142
+  Valid   - Loss: 0.157113, C-index: 0.749621, Brier: 0.158592, AUC: 0.788592
+Counter 1 of 8
+Epoch 5
+-------------------------------
+  Loss breakdown - Pseudo: 0.197942, Fairness: 0.145728 (λ=0.020), Total: 0.200857
+Epoch 5:
+  Train   - Loss: 0.200857
+  Valid   - Loss: 0.162290
+Counter 2 of 8
+Epoch 6
+-------------------------------
+  Loss breakdown - Pseudo: 0.192560, Fairness: 0.160674 (λ=0.020), Total: 0.195773
+Epoch 6:
+  Train   - Loss: 0.195773
+  Valid   - Loss: 0.172556
+Counter 3 of 8
+Epoch 7
+-------------------------------
+  Loss breakdown - Pseudo: 0.188808, Fairness: 0.163000 (λ=0.020), Total: 0.192068
+Epoch 7:
+  Train   - Loss: 0.192068, C-index: 0.740096, Brier: 0.167350, AUC: 0.776051
+  Valid   - Loss: 0.174077, C-index: 0.740032, Brier: 0.168004, AUC: 0.786227
+Counter 4 of 8
+Epoch 8
+-------------------------------
+  Loss breakdown - Pseudo: 0.191768, Fairness: 0.146513 (λ=0.020), Total: 0.194698
+Epoch 8:
+  Train   - Loss: 0.194698
+  Valid   - Loss: 0.160042
+Counter 5 of 8
+Epoch 9
+-------------------------------
+  Loss breakdown - Pseudo: 0.190556, Fairness: 0.162928 (λ=0.020), Total: 0.193814
+Epoch 9:
+  Train   - Loss: 0.193814
+  Valid   - Loss: 0.172791
+Counter 6 of 8
+Epoch 10
+-------------------------------
+  Loss breakdown - Pseudo: 0.190309, Fairness: 0.146505 (λ=0.020), Total: 0.193239
+Epoch 10:
+  Train   - Loss: 0.193239, C-index: 0.734483, Brier: 0.162680, AUC: 0.770708
+  Valid   - Loss: 0.167506, C-index: 0.733689, Brier: 0.163409, AUC: 0.774666
+Counter 7 of 8
+Epoch 11
+-------------------------------
+  Loss breakdown - Pseudo: 0.189720, Fairness: 0.144983 (λ=0.020), Total: 0.192619
+Epoch 11:
+  Train   - Loss: 0.192619
+  Valid   - Loss: 0.154298
+Epoch 12
+-------------------------------
+  Loss breakdown - Pseudo: 0.191376, Fairness: 0.143702 (λ=0.020), Total: 0.194250
+Epoch 12:
+  Train   - Loss: 0.194250
+  Valid   - Loss: 0.174386
+Counter 1 of 8
+Epoch 13
+-------------------------------
+  Loss breakdown - Pseudo: 0.192169, Fairness: 0.144491 (λ=0.020), Total: 0.195058
+Epoch 13:
+  Train   - Loss: 0.195058, C-index: 0.736537, Brier: 0.168547, AUC: 0.774847
+  Valid   - Loss: 0.174325, C-index: 0.737076, Brier: 0.168893, AUC: 0.779087
+Counter 2 of 8
+Epoch 14
+-------------------------------
+  Loss breakdown - Pseudo: 0.188005, Fairness: 0.141845 (λ=0.020), Total: 0.190842
+Epoch 14:
+  Train   - Loss: 0.190842
+  Valid   - Loss: 0.165984
+Counter 3 of 8
+Epoch 15
+-------------------------------
+  Loss breakdown - Pseudo: 0.191052, Fairness: 0.151652 (λ=0.020), Total: 0.194085
+Epoch 15:
+  Train   - Loss: 0.194085
+  Valid   - Loss: 0.174762
+Counter 4 of 8
+Epoch 16
+-------------------------------
+  Loss breakdown - Pseudo: 0.190415, Fairness: 0.135130 (λ=0.020), Total: 0.193118
+Epoch 16:
+  Train   - Loss: 0.193118, C-index: 0.742514, Brier: 0.156795, AUC: 0.781893
+  Valid   - Loss: 0.154574, C-index: 0.744628, Brier: 0.155612, AUC: 0.792517
+Counter 5 of 8
+Epoch 17
+-------------------------------
+  Loss breakdown - Pseudo: 0.190340, Fairness: 0.136948 (λ=0.020), Total: 0.193079
+Epoch 17:
+  Train   - Loss: 0.193079
+  Valid   - Loss: 0.163608
+Counter 6 of 8
+Epoch 18
+-------------------------------
+  Loss breakdown - Pseudo: 0.190143, Fairness: 0.139120 (λ=0.020), Total: 0.192926
+Epoch 18:
+  Train   - Loss: 0.192926
+  Valid   - Loss: 0.171296
+Counter 7 of 8
+Epoch 19
+-------------------------------
+  Loss breakdown - Pseudo: 0.193726, Fairness: 0.130562 (λ=0.020), Total: 0.196337
+Epoch 19:
+  Train   - Loss: 0.196337, C-index: 0.735827, Brier: 0.172836, AUC: 0.773685
+  Valid   - Loss: 0.172828, C-index: 0.731194, Brier: 0.173619, AUC: 0.780162
+Counter 8 of 8
+Epoch 20
+-------------------------------
+  Loss breakdown - Pseudo: 0.191562, Fairness: 0.132043 (λ=0.020), Total: 0.194203
+Epoch 20:
+  Train   - Loss: 0.194203
+  Valid   - Loss: 0.180835
+Counter 9 of 8
+Early stopping with best_val_loss:  0.1542980492942863
+Done!
+Your result is ready!!! Saved to: ./Results/Results_FIPNAM_FLChain_lambda_0_02.csv
+Loss plot saved to: ./Results/Results_FIPNAM_FLChain_lambda_0_02.png
+
+scontrol show job 498036
+JobId=498036 ArrayJobId=498036 ArrayTaskId=2 JobName=FIPNAM_FLC
+   UserId=dinghaoc(3151984) GroupId=dinghaoc(3151984) MCS_label=N/A
+   Priority=595559 Nice=0 Account=def-agoldenb-ab QOS=normal
+   JobState=COMPLETING Reason=None Dependency=(null)
+   Requeue=0 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=01:52:24 TimeLimit=10:00:00 TimeMin=N/A
+   SubmitTime=2025-11-15T22:17:13 EligibleTime=2025-11-15T22:17:14
+   AccrueTime=2025-11-15T22:17:14
+   StartTime=2025-11-15T22:46:47 EndTime=2025-11-16T00:39:11 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-11-15T22:46:47 Scheduler=Main
+   Partition=compute AllocNode:Sid=tri-login03:444166
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=tri0613
+   BatchHost=tri0613
+   NumNodes=1 NumCPUs=192 NumTasks=1 CPUs/Task=10 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=10,mem=767000M,node=1,billing=10
+   AllocTRES=cpu=192,mem=767000M,node=1,billing=192
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=10 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/run_FIPNAM_FLC.slurm
+   WorkDir=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
+   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L run_FIPNAM_FLC.slurm 
+   StdErr=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIPNAM_FLC_498036_2.err
+   StdIn=/dev/null
+   StdOut=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIPNAM_FLC_498036_2.out
+   TresPerTask=cpu=10
+   
+
+JobId=498111 ArrayJobId=498036 ArrayTaskId=1 JobName=FIPNAM_FLC
+   UserId=dinghaoc(3151984) GroupId=dinghaoc(3151984) MCS_label=N/A
+   Priority=595559 Nice=0 Account=def-agoldenb-ab QOS=normal
+   JobState=COMPLETED Reason=None Dependency=(null)
+   Requeue=0 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=01:52:23 TimeLimit=10:00:00 TimeMin=N/A
+   SubmitTime=2025-11-15T22:17:13 EligibleTime=2025-11-15T22:17:14
+   AccrueTime=2025-11-15T22:17:14
+   StartTime=2025-11-15T22:46:47 EndTime=2025-11-16T00:39:10 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-11-15T22:46:47 Scheduler=Main
+   Partition=compute AllocNode:Sid=tri-login03:444166
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=tri0535
+   BatchHost=tri0535
+   NumNodes=1 NumCPUs=192 NumTasks=1 CPUs/Task=10 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=10,mem=767000M,node=1,billing=10
+   AllocTRES=cpu=192,mem=767000M,node=1,billing=192
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=10 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/run_FIPNAM_FLC.slurm
+   WorkDir=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
+   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L run_FIPNAM_FLC.slurm 
+   StdErr=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIPNAM_FLC_498036_1.err
+   StdIn=/dev/null
+   StdOut=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIPNAM_FLC_498036_1.out
+   TresPerTask=cpu=10
+   
+
+JobId=498104 ArrayJobId=498036 ArrayTaskId=0 JobName=FIPNAM_FLC
+   UserId=dinghaoc(3151984) GroupId=dinghaoc(3151984) MCS_label=N/A
+   Priority=595553 Nice=0 Account=def-agoldenb-ab QOS=normal
+   JobState=COMPLETED Reason=None Dependency=(null)
+   Requeue=0 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=01:52:29 TimeLimit=10:00:00 TimeMin=N/A
+   SubmitTime=2025-11-15T22:17:13 EligibleTime=2025-11-15T22:17:14
+   AccrueTime=2025-11-15T22:17:14
+   StartTime=2025-11-15T22:45:15 EndTime=2025-11-16T00:37:44 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-11-15T22:45:15 Scheduler=Main
+   Partition=compute AllocNode:Sid=tri-login03:444166
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=tri0484
+   BatchHost=tri0484
+   NumNodes=1 NumCPUs=192 NumTasks=1 CPUs/Task=10 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=10,mem=767000M,node=1,billing=10
+   AllocTRES=cpu=192,mem=767000M,node=1,billing=192
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=10 MinMemoryNode=0 MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/run_FIPNAM_FLC.slurm
+   WorkDir=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA
+   Comment=/opt/slurm/bin/sbatch --export=NONE --get-user-env=L run_FIPNAM_FLC.slurm 
+   StdErr=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIPNAM_FLC_498036_0.err
+   StdIn=/dev/null
+   StdOut=/scratch/dinghaoc/Fairness-in-Machine-Learning-Model/Simulation_Study/FISA/outputs/FIPNAM_FLC_498036_0.out
+   TresPerTask=cpu=10
+   
+
+sacct -j 498036
+JobID           JobName    Account    Elapsed  MaxVMSize     MaxRSS  SystemCPU    UserCPU ExitCode 
+------------ ---------- ---------- ---------- ---------- ---------- ---------- ---------- -------- 
+498036_0     FIPNAM_FLC def-agold+   01:52:29                         01:15:28 2-22:54:26      0:0 
+498036_0.ba+      batch def-agold+   01:52:29          0   3145568K   01:15:28 2-22:54:26      0:0 
+498036_0.ex+     extern def-agold+   01:52:29          0          0   00:00:00   00:00:00      0:0 
+498036_1     FIPNAM_FLC def-agold+   01:52:23                         01:16:49 3-00:09:47      0:0 
+498036_1.ba+      batch def-agold+   01:52:23          0   2964620K   01:16:49 3-00:09:47      0:0 
+498036_1.ex+     extern def-agold+   01:52:23          0          0   00:00:00   00:00:00      0:0 
+498036_2     FIPNAM_FLC def-agold+   01:52:24                         00:00:00   00:00:00      0:0 
+498036_2.ba+      batch def-agold+   01:52:24                         00:00:00   00:00:00      0:0 
+498036_2.ex+     extern def-agold+   01:52:24                         00:00:00   00:00:00      0:0 
+
