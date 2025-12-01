@@ -54,11 +54,11 @@ table_score <- results_all %>%
   arrange(Model, Data, Lambda)
 
 table_score %>%
-  kbl(digits = 4, caption = "Performance and Fairness Metrics") %>%
+  kbl(digits = 3, caption = "Performance and Fairness Metrics") %>%
   kable_classic(full_width = FALSE)
 
 table_score_latex <- table_score %>%
-  kbl(format = "latex", booktabs = TRUE) %>%
+  kbl(format = "latex", booktabs = TRUE, digits = 3) %>%
   kable_styling()
 
 writeLines(table_score_latex, "table_score.tex")
@@ -93,7 +93,7 @@ p_fl <- ggplot(results_fair_long,
 
 p_fl
 
-ggsave("fair_lambda.png", p_fl, width = 12, height = 8, dpi = 300)
+ggsave("fair_lambda.png", p_fl, width = 12, height = 6, dpi = 300)
 ```
 
 ```{r}
@@ -147,7 +147,7 @@ p_pl <- (p_perf_auc | p_perf_brier) +
 
 p_pl
 
-ggsave("perf_lambda.png", p_pl, width = 12, height = 6, dpi = 300)
+ggsave("perf_lambda.png", p_pl, width = 12, height = 5, dpi = 300)
 
 ```
 
@@ -179,7 +179,7 @@ p_pm <- ggplot(results_perf,
 
 p_pm
 
-ggsave("perf_model.png", p_pm, width = 12, height = 6, dpi = 300)
+ggsave("perf_model.png", p_pm, width = 12, height = 5, dpi = 300)
 
 ```
 
@@ -211,7 +211,7 @@ p_fm <- ggplot(results_comp1,
 
 p_fm
 
-ggsave("fair_model.png", p_fm, width = 12, height = 8, dpi = 300)
+ggsave("fair_model.png", p_fm, width = 12, height = 6, dpi = 300)
 
 ```
 

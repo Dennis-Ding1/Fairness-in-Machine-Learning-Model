@@ -85,8 +85,6 @@ generate_data <- function(
 ```
 
 ```{r}
-# Example
-
 # X choice:
 mu_X = c(50,    # age
          5,   # LOS (Length of Stay)
@@ -206,9 +204,9 @@ ggplot(dat, aes(x = Y, fill = factor(A))) +
 
 ggplot(dat, aes(x = Y, fill = factor(Delta))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
-  labs(title = "Events (Δ=1) vs Censored (Δ=0)",
+  labs(title = "SIM_I Obsereved Time by censoring status (0 censored, 1 uncensored) ",
        x = "Observed Time",
-       fill = "Event Indicator") +
+       fill = "Censoring status") +
   theme_minimal()
 
 ggplot(dat, aes(x = age, fill = factor(A))) +
@@ -256,11 +254,11 @@ ggplot(dat, aes(x = T_true)) +
        y = "Count")+
   theme_minimal()
 
-ggplot(dat, aes(x = Y, fill = factor(A))) +
+ggplot(dat, aes(x = Y, fill = factor(Delta))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
-  labs(title = "Observed Time Distribution by Group",
-       x = "Observed Time (Y)",
-       fill = "Group A") +
+  labs(title = "SIM_II Obsereved Time by censoring status (0 censored, 1 uncensored) ",
+       x = "Observed Time",
+       fill = "Censoring status") +
   theme_minimal()
 
 ggplot(dat, aes(x = Y, fill = factor(Delta))) +
@@ -321,9 +319,9 @@ summary_all <- bind_rows(tbl_I, tbl_II) %>%
   arrange(Dataset, Variable)  
 
 summary_all %>%
-  kable("html", booktabs = TRUE, caption = "Summary Statistics for Two Simulated Datasets") %>%
-  kable_styling(latex_options = c("hold_position")) 
-  # save_kable("summary_statistic.tex")
+  kable("latex", booktabs = TRUE, caption = "Summary Statistics for Two Simulated Datasets") %>%
+  kable_styling(latex_options = c("hold_position")) %>% 
+  save_kable("summary_statistic.tex")
 ```
 
 ```{r}
@@ -331,24 +329,27 @@ censor_table <- function(df, name){
   df %>%
     mutate(censored = 1 - Delta) %>%
     summarise(
-      Censor_A0 = mean(censored[A == 0], na.rm=TRUE),
-      Censor_A1 = mean(censored[A == 1], na.rm=TRUE),
-      Censor_Overall = mean(censored, na.rm=TRUE)
+      Censor_A0 = mean(censored[A == 0], na.rm=TRUE) * 100,
+      Censor_A1 = mean(censored[A == 1], na.rm=TRUE) * 100,
+      Censor_Overall = mean(censored, na.rm=TRUE) * 100
     ) %>%
-    mutate(Dataset = name) %>%
+        mutate(
+      Dataset = name,
+      across(starts_with("Censor_"), ~ sprintf("%.1f%%", .x))  # 转成百分比格式
+    ) %>%
     select(Dataset, everything())
 }
 
-cen_I  <- censor_table(data_I, "Data I")
-cen_II <- censor_table(data_II, "Data II")
+cen_I  <- censor_table(data_I, "SIM_I")
+cen_II <- censor_table(data_II, "SIM_II")
 
 censor_all <- bind_rows(cen_I, cen_II)
 
 censor_all %>%
-  kable("html", booktabs = TRUE, digits = 3,
+  kable("latex", booktabs = TRUE, digits = 3,
         caption = "Censoring Rates by Group and Overall") %>%
-  kable_styling(latex_options = c("hold_position"))
-  # save_kable("censoring_rate.tex")
+  kable_styling(latex_options = c("hold_position")) %>% 
+  save_kable("censoring_rate.tex")
 
 ```
 
@@ -387,9 +388,9 @@ ggplot(flc, aes(x = time, fill = factor(sex))) +
 
 ggplot(flc, aes(x = time, fill = factor(status))) +
   geom_histogram(alpha = 0.5, bins = 40, position = "identity") +
-  labs(title = "Events (Δ=1) vs Censored (Δ=0)",
+  labs(title = "FLChain Obsereved Time by censoring status (0 censored, 1 uncensored) ",
        x = "Observed Time",
-       fill = "Event Indicator") +
+       fill = "Censoring status") +
   theme_minimal()
 
 ggplot(flc, aes(x = age, fill = factor(sex))) +
